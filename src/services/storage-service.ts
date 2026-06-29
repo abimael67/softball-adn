@@ -1,45 +1,69 @@
-const FUNCTIONS_URL = import.meta.env.VITE_SUPABASE_URL.replace(/\/$/, "") + "/functions/v1";
+import { supabase } from "@/lib/supabase";
 
 export class StorageService {
   private bucketName: string;
   private publicUrl: string;
+  private workerUrl: string;
 
   constructor() {
     this.bucketName = import.meta.env.VITE_R2_BUCKET_NAME;
     this.publicUrl = import.meta.env.VITE_R2_PUBLIC_URL;
+    this.workerUrl = import.meta.env.VITE_WORKER_URL;
 
     if (!this.bucketName || !this.publicUrl) {
       throw new Error("Missing R2 environment variables");
     }
+
+    if (!this.workerUrl) {
+      throw new Error("Missing VITE_WORKER_URL environment variable");
+    }
+  }
+
+  private async getAuthToken(): Promise<string> {
+    const { data } = await supabase.auth.getSession();
+    if (!data.session?.access_token) {
+      throw new Error("Not authenticated");
+    }
+    return data.session.access_token;
   }
 
   async upload(file: File, path: string): Promise<string> {
+    const token = await this.getAuthToken();
+
     const formData = new FormData();
     formData.append("file", file);
     formData.append("path", path);
 
-    const response = await fetch(`${FUNCTIONS_URL}/upload`, {
+    const response = await fetch(`${this.workerUrl}/upload`, {
       method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
       body: formData,
     });
 
     if (!response.ok) {
-      const err = await response.text();
-      throw new Error(`Failed to upload file: ${err}`);
+      const err = await response.json().catch(() => ({ error: { message: "Upload failed" } }));
+      throw new Error(err.error?.message || "Failed to upload file");
     }
 
     const data = await response.json();
-    return data.key;
+    return data.data.key;
   }
 
   async delete(key: string): Promise<void> {
-    const response = await fetch(`${FUNCTIONS_URL}/delete?key=${encodeURIComponent(key)}`, {
+    const token = await this.getAuthToken();
+
+    const response = await fetch(`${this.workerUrl}/upload?key=${encodeURIComponent(key)}`, {
       method: "DELETE",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
     });
 
     if (!response.ok) {
-      const err = await response.text();
-      throw new Error(`Failed to delete file: ${err}`);
+      const err = await response.json().catch(() => ({ error: { message: "Delete failed" } }));
+      throw new Error(err.error?.message || "Failed to delete file");
     }
   }
 
