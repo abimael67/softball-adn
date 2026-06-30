@@ -12,9 +12,9 @@ function sanitizePath(path: string): string {
     .replace(/^\/|\/$/g, "");
 }
 
-function generateKey(folder: string, subfolder: string, extension: string): string {
+function generateKey(folder: string, extension: string): string {
   const uuid = crypto.randomUUID();
-  return `${folder}/${subfolder}/${uuid}.${extension}`;
+  return `${folder}/${uuid}.${extension}`;
 }
 
 function getExtension(contentType: string): string {
@@ -68,7 +68,7 @@ export const uploadHandler: RouteHandler = async (
 
   const sanitizedPath = sanitizePath(path);
   const extension = getExtension(file.type);
-  const key = generateKey(sanitizedPath, "", extension);
+  const key = generateKey(sanitizedPath, extension);
 
   const r2 = createR2Service(env);
   const buffer = await file.arrayBuffer();

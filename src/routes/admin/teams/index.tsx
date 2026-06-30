@@ -92,7 +92,7 @@ function AdminTeamsPage() {
       let logoKey = editingTeam?.logo_key || null;
       if (logoFile) {
         try {
-          logoKey = await storageService.upload(logoFile, `teams/logos/${Date.now()}-${logoFile.name}`);
+          logoKey = await storageService.upload(logoFile, `teams/logos`);
         } catch {
           setFormError("Error al subir el logo");
           return;

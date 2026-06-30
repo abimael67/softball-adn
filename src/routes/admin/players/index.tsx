@@ -111,7 +111,7 @@ function AdminPlayersPage() {
       let photoKey = editingPlayer?.photo_key || null;
       if (photoFile) {
         try {
-          photoKey = await storageService.upload(photoFile, `players/photos/${Date.now()}-${photoFile.name}`);
+          photoKey = await storageService.upload(photoFile, `players/photos`);
         } catch {
           setFormError("Error al subir la foto");
           return;
