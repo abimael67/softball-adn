@@ -18,15 +18,15 @@ function HomePage() {
           }}
         />
         <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/60 to-black/40" />
-        <div className="relative z-10 flex min-h-[500px] flex-col items-center justify-center px-4 text-center text-white">
-          <div className="mb-4 flex items-center gap-4">
+        <div className="relative z-10 flex min-h-[400px] sm:min-h-[500px] flex-col items-center justify-center px-4 text-center text-white">
+          <div className="mb-4 flex flex-col sm:flex-row items-center gap-3 sm:gap-4">
             <img
               src="https://pub-27bf0bf9c1e447639bcb4a0a3693697b.r2.dev/Screenshot%202026-07-05%20at%2012.32.23%E2%80%AFAM.png"
               alt="Logo"
-              className="h-20 w-20 rounded-full border-4 border-primary/50 shadow-lg sm:h-24 sm:w-24"
+              className="hidden sm:block h-20 w-20 rounded-full border-4 border-primary/50 shadow-lg sm:h-24 sm:w-24"
             />
             <h1
-              className="text-5xl font-black uppercase tracking-wider sm:text-6xl md:text-7xl"
+              className="text-3xl sm:text-5xl md:text-6xl lg:text-7xl font-black uppercase tracking-wider"
               style={{
                 fontFamily: "'Bebas Neue', 'Oswald', 'Impact', sans-serif",
                 textShadow: "2px 2px 8px rgba(0,0,0,0.5)",
@@ -40,14 +40,14 @@ function HomePage() {
               </span>
             </h1>
           </div>
-          <p className="mb-8 max-w-2xl text-lg text-gray-200 sm:text-xl">
+          <p className="mb-6 sm:mb-8 max-w-2xl text-base sm:text-lg md:text-xl text-gray-200 px-2">
             Estadísticas en vivo, resultados históricos y todo lo que necesitas saber sobre nuestra
             liga
           </p>
-          <div className="flex flex-wrap justify-center gap-4">
-            <Button asChild size="lg" className="text-base">
+          <div className="flex flex-col sm:flex-row w-full sm:w-auto justify-center gap-3 sm:gap-4 px-4 sm:px-0">
+            <Button asChild size="lg" className="text-sm sm:text-base w-full sm:w-auto">
               <Link to={ROUTES.TEAMS}>
-                <Users className="mr-2 h-5 w-5" />
+                <Users className="mr-2 h-4 w-4 sm:h-5 sm:w-5" />
                 Ver Equipos
               </Link>
             </Button>
@@ -55,10 +55,10 @@ function HomePage() {
               asChild
               size="lg"
               variant="outline"
-              className="border-white/30 bg-white/10 text-base text-white backdrop-blur hover:bg-white/20"
+              className="border-white/30 bg-white/10 text-sm sm:text-base text-white backdrop-blur hover:bg-white/20 w-full sm:w-auto"
             >
               <Link to={ROUTES.STANDINGS}>
-                <Trophy className="mr-2 h-5 w-5" />
+                <Trophy className="mr-2 h-4 w-4 sm:h-5 sm:w-5" />
                 Tabla de Posiciones
               </Link>
             </Button>
