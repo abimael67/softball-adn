@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { DateInput } from "@/components/ui/date-input";
 import {
   Select,
   SelectContent,
@@ -156,12 +157,12 @@ function AdminSeasonsPage() {
     {
       accessorKey: "start_date",
       header: "Inicio",
-      cell: ({ getValue }) => new Date(getValue<string>()).toLocaleDateString("es"),
+      cell: ({ getValue }) => new Date(getValue<string>() + "T00:00:00").toLocaleDateString("es-ES", { day: "2-digit", month: "2-digit", year: "numeric" }),
     },
     {
       accessorKey: "end_date",
       header: "Fin",
-      cell: ({ getValue }) => new Date(getValue<string>()).toLocaleDateString("es"),
+      cell: ({ getValue }) => new Date(getValue<string>() + "T00:00:00").toLocaleDateString("es-ES", { day: "2-digit", month: "2-digit", year: "numeric" }),
     },
     {
       accessorKey: "status",
@@ -263,20 +264,18 @@ function AdminSeasonsPage() {
               </div>
               <div className="space-y-2">
                 <Label htmlFor="start_date">Fecha inicio</Label>
-                <Input
+                <DateInput
                   id="start_date"
-                  type="date"
                   value={form.start_date}
-                  onChange={(e) => setForm({ ...form, start_date: e.target.value })}
+                  onChange={(v) => setForm({ ...form, start_date: v })}
                 />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="end_date">Fecha fin</Label>
-                <Input
+                <DateInput
                   id="end_date"
-                  type="date"
                   value={form.end_date}
-                  onChange={(e) => setForm({ ...form, end_date: e.target.value })}
+                  onChange={(v) => setForm({ ...form, end_date: v })}
                 />
               </div>
               <div className="col-span-2 space-y-2">

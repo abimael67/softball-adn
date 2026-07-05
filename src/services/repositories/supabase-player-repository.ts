@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { supabase } from "@/lib/supabase";
 import type { Player, PlayerInsert, PlayerUpdate } from "@/types/database";
-import type { PlayerRepository } from "@/services/repositories/player-repository";
+import type { PlayerRepository, PaginatedResult } from "@/services/repositories/player-repository";
 import { DatabaseError, NotFoundError } from "@/lib/errors";
 
 export class SupabasePlayerRepository implements PlayerRepository {
@@ -14,6 +14,30 @@ export class SupabasePlayerRepository implements PlayerRepository {
 
     if (error) throw new DatabaseError("Failed to fetch players", error);
     return data;
+  }
+
+  async findAllPaginated(
+    offset: number,
+    limit: number,
+    search?: string
+  ): Promise<PaginatedResult<Player>> {
+    let query = supabase
+      .from("players")
+      .select("*", { count: "exact" })
+      .order("last_name")
+      .order("first_name")
+      .range(offset, offset + limit - 1);
+
+    if (search) {
+      query = query.or(
+        `first_name.ilike.%${search}%,last_name.ilike.%${search}%,nickname.ilike.%${search}%`
+      );
+    }
+
+    const { data, error, count } = await query;
+
+    if (error) throw new DatabaseError("Failed to fetch players", error);
+    return { data, count: count ?? 0 };
   }
 
   async findById(id: string): Promise<Player | null> {
@@ -77,5 +101,14 @@ export class SupabasePlayerRepository implements PlayerRepository {
     if (!player) throw new NotFoundError("Player", id);
 
     return player;
+  }
+
+  async delete(id: string): Promise<void> {
+    const { error } = await supabase
+      .from("players")
+      .delete()
+      .eq("id", id);
+
+    if (error) throw new DatabaseError("Failed to delete player", error);
   }
 }

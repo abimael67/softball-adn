@@ -59,3 +59,14 @@ export function useUpdatePlayer() {
     },
   });
 }
+
+export function useDeletePlayer() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: string) => repository.delete(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["players"] });
+    },
+  });
+}

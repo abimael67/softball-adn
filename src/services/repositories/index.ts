@@ -1,7 +1,7 @@
 export type { SeasonRepository } from "./season-repository";
 export type { TeamRepository } from "./team-repository";
 export type { PositionRepository } from "./position-repository";
-export type { PlayerRepository } from "./player-repository";
+export type { PlayerRepository, PaginatedResult } from "./player-repository";
 export type { VenueRepository } from "./venue-repository";
 export type { SeasonRosterRepository } from "./season-roster-repository";
 export type { GameRepository } from "./game-repository";

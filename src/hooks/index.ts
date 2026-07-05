@@ -1,6 +1,7 @@
 export { useSeasons, useSeason, useActiveSeason, useSeasonsByYear, useCreateSeason, useUpdateSeason } from "./use-seasons";
 export { useTeams, useTeam, useTeamsBySeason, useCreateTeam, useUpdateTeam } from "./use-teams";
-export { usePlayers, usePlayer, usePlayersByTeam, useSearchPlayers, useCreatePlayer, useUpdatePlayer } from "./use-players";
+export { usePlayers, usePlayer, usePlayersByTeam, useSearchPlayers, useCreatePlayer, useUpdatePlayer, useDeletePlayer } from "./use-players";
+export { usePositions, usePosition, useCreatePosition, useUpdatePosition, useDeletePosition } from "./use-positions";
 export { useVenues, useVenue, useCreateVenue, useUpdateVenue } from "./use-venues";
 export { useChurches, useChurch, useCreateChurch, useUpdateChurch, useDeleteChurch } from "./use-churches";
 export { useGames, useGame, useGamesByTeam, useGamesByStatus, useUpcomingGames, useRecentGames, usePendingReviewGames, useApprovedGames, useCreateGame, useUpdateGame, useDeleteGame, useSubmitGameForReview, useApproveGame, usePublishGame, useReturnGameForCorrection } from "./use-games";

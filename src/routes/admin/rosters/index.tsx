@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef, useCallback } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { UserCheck, Plus, Trash2, ArrowRightLeft, Search } from "lucide-react";
 import {
@@ -58,6 +58,8 @@ function AdminRostersPage() {
   const [transferringPlayer, setTransferringPlayer] = useState<{ roster: SeasonRoster; player: Player } | null>(null);
   const [transferTeamId, setTransferTeamId] = useState("");
   const [jerseyNumber, setJerseyNumber] = useState("");
+  const [localJerseyNumbers, setLocalJerseyNumbers] = useState<Record<string, string>>({});
+  const debounceTimers = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
 
   const seasonId = selectedSeasonId || activeSeason?.id || "";
   const { data: rosters, isLoading: rostersLoading } = useRostersByTeam(selectedTeamId, seasonId);
@@ -71,13 +73,13 @@ function AdminRostersPage() {
     if (!players) return [];
     let filtered = players.filter((p) => !assignedPlayerIds.has(p.id));
     if (playerSearch.trim()) {
-      const q = playerSearch.toLowerCase();
-      filtered = filtered.filter(
-        (p) =>
-          p.first_name.toLowerCase().includes(q) ||
-          p.last_name.toLowerCase().includes(q) ||
-          (p.nickname && p.nickname.toLowerCase().includes(q)),
-      );
+      const q = playerSearch.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+      filtered = filtered.filter((p) => {
+        const firstName = p.first_name.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+        const lastName = p.last_name.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+        const nickname = p.nickname?.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "") || "";
+        return firstName.includes(q) || lastName.includes(q) || nickname.includes(q);
+      });
     }
     return filtered;
   }, [players, assignedPlayerIds, playerSearch]);
@@ -91,7 +93,14 @@ function AdminRostersPage() {
         player: players.find((p) => p.id === r.player_id),
       }))
       .filter((r) => r.player)
-      .sort((a, b) => (a.roster.jersey_number ?? 99) - (b.roster.jersey_number ?? 99));
+      .sort((a, b) => {
+        const aNum = a.roster.jersey_number;
+        const bNum = b.roster.jersey_number;
+        if (aNum === null && bNum === null) return 0;
+        if (aNum === null) return -1;
+        if (bNum === null) return 1;
+        return aNum - bNum;
+      });
   }, [rosters, players]);
 
   const handleAssign = async (player: Player) => {
@@ -148,13 +157,27 @@ function AdminRostersPage() {
     }
   };
 
-  const handleUpdateJersey = async (roster: SeasonRoster, newNumber: number | null) => {
-    try {
-      await updateRoster.mutateAsync({ id: roster.id, data: { jersey_number: newNumber } });
-    } catch (err) {
-      toast({ title: "Error", description: getUserFriendlyMessage(handleError(err)), variant: "destructive" });
+  const handleUpdateJersey = useCallback((roster: SeasonRoster, value: string) => {
+    setLocalJerseyNumbers((prev) => ({ ...prev, [roster.id]: value }));
+
+    if (debounceTimers.current[roster.id]) {
+      clearTimeout(debounceTimers.current[roster.id]);
     }
-  };
+
+    debounceTimers.current[roster.id] = setTimeout(async () => {
+      const newNumber = value ? parseInt(value) : null;
+      try {
+        await updateRoster.mutateAsync({ id: roster.id, data: { jersey_number: newNumber } });
+        setLocalJerseyNumbers((prev) => {
+          const next = { ...prev };
+          delete next[roster.id];
+          return next;
+        });
+      } catch (err) {
+        toast({ title: "Error", description: getUserFriendlyMessage(handleError(err)), variant: "destructive" });
+      }
+    }, 2000);
+  }, [updateRoster]);
 
   if (playersLoading) return <LoadingState />;
 
@@ -239,18 +262,15 @@ function AdminRostersPage() {
                           {player!.last_name}, {player!.first_name}
                         </p>
                         <p className="text-xs text-muted-foreground">
-                          Desde {new Date(roster.joined_at).toLocaleDateString("es")}
+                          Desde {new Date(roster.joined_at).toLocaleDateString("es-ES", { day: "2-digit", month: "2-digit", year: "numeric" })}
                         </p>
                       </div>
                       <Input
                         type="number"
                         min={0}
                         max={99}
-                        value={roster.jersey_number ?? ""}
-                        onChange={(e) => {
-                          const val = e.target.value;
-                          handleUpdateJersey(roster, val ? parseInt(val) : null);
-                        }}
+                        value={localJerseyNumbers[roster.id] ?? (roster.jersey_number ?? "")}
+                        onChange={(e) => handleUpdateJersey(roster, e.target.value)}
                         className="w-16 h-8 text-center text-sm"
                         placeholder="#"
                       />

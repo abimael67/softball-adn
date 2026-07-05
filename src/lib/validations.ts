@@ -44,10 +44,10 @@ export type PlayerInput = z.infer<typeof playerSchema>;
 
 export const venueSchema = z.object({
   name: z.string().min(1, "El nombre es requerido"),
-  address: z.string().optional(),
-  city: z.string().optional(),
-  latitude: z.number().min(-90).max(90).optional(),
-  longitude: z.number().min(-180).max(180).optional(),
+  address: z.string().nullable().optional(),
+  city: z.string().nullable().optional(),
+  latitude: z.number().min(-90).max(90).nullable().optional(),
+  longitude: z.number().min(-180).max(180).nullable().optional(),
 });
 
 export type VenueInput = z.infer<typeof venueSchema>;

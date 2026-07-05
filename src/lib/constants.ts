@@ -23,20 +23,26 @@ export const SEASON_PARAM = "seasonId" as const;
 export const QUERY_KEYS = {
   seasons: ["seasons"] as const,
   season: (seasonId: string) => ["season", seasonId] as const,
+  latestSeason: ["latest-season"] as const,
   teams: (seasonId: string) => ["teams", seasonId] as const,
   team: (teamId: string) => ["team", teamId] as const,
   positions: ["positions"] as const,
   players: (seasonId: string) => ["players", seasonId] as const,
+  playersPaginated: (page: number, search?: string) => ["players", "page", page, search] as const,
   player: (playerId: string) => ["player", playerId] as const,
   venues: ["venues"] as const,
   rosters: (seasonId: string, teamId: string) => ["rosters", seasonId, teamId] as const,
   games: (seasonId: string) => ["games", seasonId] as const,
   game: (gameId: string) => ["game", gameId] as const,
+  teamRecentGames: (teamId: string, seasonId: string) => ["games", "team", teamId, "recent", seasonId] as const,
   standings: (seasonId: string) => ["standings", seasonId] as const,
   leaders: (seasonId: string) => ["leaders", seasonId] as const,
   battingStats: (gameId: string) => ["batting-stats", gameId] as const,
   pitchingStats: (gameId: string) => ["pitching-stats", gameId] as const,
   fieldingStats: (gameId: string) => ["fielding-stats", gameId] as const,
+  playerSeasonBatting: (playerId: string, seasonId: string) => ["batting-stats", playerId, seasonId] as const,
+  playerSeasonPitching: (playerId: string, seasonId: string) => ["pitching-stats", playerId, seasonId] as const,
+  playerSeasonFielding: (playerId: string, seasonId: string) => ["fielding-stats", playerId, seasonId] as const,
 } as const;
 
 export const POSITION_CODES = [

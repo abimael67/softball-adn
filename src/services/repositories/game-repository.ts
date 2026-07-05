@@ -5,6 +5,7 @@ export interface GameRepository {
   findById(id: string): Promise<Game | null>;
   findBySeasonId(seasonId: string): Promise<Game[]>;
   findByTeamId(teamId: string, seasonId: string): Promise<Game[]>;
+  findRecentByTeam(teamId: string, seasonId: string, limit: number): Promise<Game[]>;
   findByStatus(status: GameWorkflowStatus, seasonId: string): Promise<Game[]>;
   findUpcoming(seasonId: string, limit?: number): Promise<Game[]>;
   findRecent(seasonId: string, limit?: number): Promise<Game[]>;

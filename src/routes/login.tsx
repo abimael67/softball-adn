@@ -36,18 +36,18 @@ function LoginPage() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background">
-      <div className="w-full max-w-md space-y-8 rounded-lg border bg-card p-8 shadow-lg">
+    <div className="bg-background flex min-h-screen items-center justify-center">
+      <div className="bg-card w-full max-w-md space-y-8 rounded-lg border p-8 shadow-lg">
         <div>
-          <h1 className="text-center text-3xl font-bold text-foreground">Iniciar Sesión</h1>
-          <p className="mt-2 text-center text-sm text-muted-foreground">
-            Liga de Softball - Panel de Administración
+          <h1 className="text-foreground text-center text-3xl font-bold">Iniciar Sesión</h1>
+          <p className="text-muted-foreground mt-2 text-center text-sm">
+            Liga Deportiva La Hermandad - Panel de Administración
           </p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>
-            <label htmlFor="email" className="block text-sm font-medium text-foreground">
+            <label htmlFor="email" className="text-foreground block text-sm font-medium">
               Email
             </label>
             <input
@@ -56,12 +56,12 @@ function LoginPage() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              className="mt-1 block w-full rounded-md border border-input bg-background px-3 py-2 text-foreground shadow-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+              className="border-input bg-background text-foreground focus:border-primary focus:ring-primary mt-1 block w-full rounded-md border px-3 py-2 shadow-sm focus:ring-1 focus:outline-none"
             />
           </div>
 
           <div>
-            <label htmlFor="password" className="block text-sm font-medium text-foreground">
+            <label htmlFor="password" className="text-foreground block text-sm font-medium">
               Contraseña
             </label>
             <input
@@ -70,18 +70,18 @@ function LoginPage() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
-              className="mt-1 block w-full rounded-md border border-input bg-background px-3 py-2 text-foreground shadow-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+              className="border-input bg-background text-foreground focus:border-primary focus:ring-primary mt-1 block w-full rounded-md border px-3 py-2 shadow-sm focus:ring-1 focus:outline-none"
             />
           </div>
 
           {error && (
-            <div className="rounded-md bg-destructive/10 p-3 text-sm text-destructive">{error}</div>
+            <div className="bg-destructive/10 text-destructive rounded-md p-3 text-sm">{error}</div>
           )}
 
           <button
             type="submit"
             disabled={loading}
-            className="w-full rounded-md bg-primary px-4 py-2 text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+            className="bg-primary text-primary-foreground hover:bg-primary/90 w-full rounded-md px-4 py-2 disabled:opacity-50"
           >
             {loading ? "Iniciando sesión..." : "Iniciar Sesión"}
           </button>

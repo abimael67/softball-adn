@@ -38,6 +38,26 @@ export class SupabaseSeasonRepository implements SeasonRepository {
     return data;
   }
 
+  async findLatest(): Promise<Season | null> {
+    const active = await this.findActive();
+    if (active) return active;
+
+    const { data, error } = await supabase
+      .from("seasons")
+      .select("*")
+      .order("year", { ascending: false })
+      .order("start_date", { ascending: false })
+      .limit(1)
+      .single();
+
+    if (error) {
+      if (error.code === "PGRST116") return null;
+      throw new DatabaseError("Failed to fetch latest season", error);
+    }
+
+    return data;
+  }
+
   async findByYear(year: number): Promise<Season[]> {
     const { data, error } = await supabase
       .from("seasons")

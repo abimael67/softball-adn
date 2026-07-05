@@ -36,6 +36,7 @@ interface DataTableProps<TData, TValue> {
   searchPlaceholder?: string;
   pageSize?: number;
   toolbar?: React.ReactNode;
+  scrollable?: boolean;
 }
 
 export function DataTable<TData, TValue>({
@@ -45,6 +46,7 @@ export function DataTable<TData, TValue>({
   searchPlaceholder = "Buscar...",
   pageSize = 10,
   toolbar,
+  scrollable = false,
 }: DataTableProps<TData, TValue>) {
   const [sorting, setSorting] = useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
@@ -68,7 +70,7 @@ export function DataTable<TData, TValue>({
   const pageIndex = table.getState().pagination.pageIndex;
 
   return (
-    <div className="space-y-4">
+    <div className={scrollable ? "flex flex-col h-full gap-4" : "space-y-4"}>
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         {searchKey && (
           <div className="relative max-w-sm flex-1">
@@ -84,7 +86,7 @@ export function DataTable<TData, TValue>({
         {toolbar && <div className="flex items-center gap-2">{toolbar}</div>}
       </div>
 
-      <div className="rounded-md border">
+      <div className={`rounded-md border ${scrollable ? "flex-1 min-h-0 overflow-auto" : ""}`}>
         <Table>
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (

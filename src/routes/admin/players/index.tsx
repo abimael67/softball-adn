@@ -1,14 +1,15 @@
 import { useState, useRef } from "react";
 import { createFileRoute } from "@tanstack/react-router";
-import { UserCircle, Plus, Pencil, Upload, Download } from "lucide-react";
+import { UserCircle, Plus, Pencil, Trash2, Upload, Download } from "lucide-react";
 import type { ColumnDef } from "@tanstack/react-table";
-import { usePlayers, useCreatePlayer, useUpdatePlayer, useChurches } from "@/hooks";
+import { usePlayers, useCreatePlayer, useUpdatePlayer, useDeletePlayer, useChurches, usePositions } from "@/hooks";
 import type { Player, PlayerInsert, PlayerUpdate, BattingHand, ThrowingHand } from "@/types/database";
 import { handleError, getUserFriendlyMessage } from "@/lib/errors";
 import { storageService } from "@/services/storage-service";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { DateInput } from "@/components/ui/date-input";
 import {
   Select,
   SelectContent,
@@ -27,6 +28,7 @@ import {
 import { DataTable } from "@/components/admin/data-table";
 import { PageHeader, LoadingState, EmptyState } from "@/components/admin/admin-shared";
 import { CsvImportDialog, exportToCsv } from "@/components/admin/csv-import";
+import { useConfirmDialog } from "@/components/admin/confirm-dialog";
 import { toast } from "@/components/ui/toast";
 
 export const Route = createFileRoute("/admin/players/")({
@@ -39,8 +41,11 @@ const THROWS_LABELS: Record<string, string> = { left: "Izquierda", right: "Derec
 function AdminPlayersPage() {
   const { data: players, isLoading } = usePlayers();
   const { data: churches } = useChurches();
+  const { data: positions } = usePositions();
   const createPlayer = useCreatePlayer();
   const updatePlayer = useUpdatePlayer();
+  const deletePlayer = useDeletePlayer();
+  const { confirm, dialog: confirmDialog } = useConfirmDialog();
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [csvOpen, setCsvOpen] = useState(false);
@@ -55,6 +60,7 @@ function AdminPlayersPage() {
     bats: "" as string,
     throws: "" as string,
     church_id: "" as string,
+    primary_position_id: "" as string,
   });
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
@@ -62,7 +68,7 @@ function AdminPlayersPage() {
   const fileRef = useRef<HTMLInputElement>(null);
 
   const resetForm = () => {
-    setForm({ first_name: "", last_name: "", nickname: "", birth_date: "", bats: "", throws: "", church_id: "" });
+    setForm({ first_name: "", last_name: "", nickname: "", birth_date: "", bats: "", throws: "", church_id: "", primary_position_id: "" });
     setEditingPlayer(null);
     setPhotoFile(null);
     setPhotoPreview(null);
@@ -81,6 +87,7 @@ function AdminPlayersPage() {
       bats: player.bats || "",
       throws: player.throws || "",
       church_id: player.church_id || "",
+      primary_position_id: player.primary_position_id || "",
     });
     setPhotoPreview(player.photo_key ? storageService.getPublicUrl(player.photo_key) : null);
     setPhotoFile(null);
@@ -127,6 +134,7 @@ function AdminPlayersPage() {
         throws: (form.throws as ThrowingHand) || null,
         photo_key: photoKey,
         church_id: form.church_id || null,
+        primary_position_id: form.primary_position_id || null,
       };
 
       if (editingPlayer) {
@@ -147,6 +155,8 @@ function AdminPlayersPage() {
     let imported = 0;
     for (const row of rows) {
       try {
+        const positionCode = row.position_code?.trim().toUpperCase();
+        const position = positionCode ? positions?.find((p) => p.code === positionCode) : null;
         await createPlayer.mutateAsync({
           first_name: row.first_name,
           last_name: row.last_name,
@@ -154,6 +164,7 @@ function AdminPlayersPage() {
           birth_date: row.birth_date || null,
           bats: (row.bats as BattingHand) || null,
           throws: (row.throws as ThrowingHand) || null,
+          primary_position_id: position?.id || null,
         } as PlayerInsert);
         imported++;
       } catch {
@@ -166,16 +177,40 @@ function AdminPlayersPage() {
   const handleExport = () => {
     if (!players) return;
     exportToCsv(
-      players.map((p) => ({
-        first_name: p.first_name,
-        last_name: p.last_name,
-        nickname: p.nickname || "",
-        birth_date: p.birth_date || "",
-        bats: p.bats || "",
-        throws: p.throws || "",
-      })),
+      players.map((p) => {
+        const pos = positions?.find((pos) => pos.id === p.primary_position_id);
+        return {
+          first_name: p.first_name,
+          last_name: p.last_name,
+          nickname: p.nickname || "",
+          birth_date: p.birth_date || "",
+          bats: p.bats || "",
+          throws: p.throws || "",
+          position_code: pos?.code || "",
+        };
+      }),
       "jugadores.csv",
     );
+  };
+
+  const handleDelete = async (player: Player) => {
+    const confirmed = await confirm({
+      title: "Eliminar jugador",
+      description: `¿Eliminar "${player.first_name} ${player.last_name}"? Esta acción no se puede deshacer.`,
+      confirmLabel: "Eliminar",
+      variant: "destructive",
+    });
+    if (!confirmed) return;
+    try {
+      await deletePlayer.mutateAsync(player.id);
+      toast({ title: "Jugador eliminado", variant: "success" });
+    } catch (err) {
+      toast({
+        title: "Error",
+        description: getUserFriendlyMessage(handleError(err)),
+        variant: "destructive",
+      });
+    }
   };
 
   const filteredPlayers = players?.filter((p) => {
@@ -213,7 +248,7 @@ function AdminPlayersPage() {
     {
       accessorKey: "birth_date",
       header: "Nacimiento",
-      cell: ({ getValue }) => getValue<string>() ? new Date(getValue<string>()).toLocaleDateString("es") : "-",
+      cell: ({ getValue }) => getValue<string>() ? new Date(getValue<string>() + "T00:00:00").toLocaleDateString("es-ES", { day: "2-digit", month: "2-digit", year: "numeric" }) : "-",
     },
     {
       accessorKey: "bats",
@@ -236,12 +271,29 @@ function AdminPlayersPage() {
       },
     },
     {
+      id: "position",
+      header: "Posición",
+      cell: ({ row }) => {
+        const posId = row.original.primary_position_id;
+        if (!posId) return <span className="text-muted-foreground">-</span>;
+        const pos = positions?.find((p) => p.id === posId);
+        return pos ? (
+          <span className="inline-flex h-6 w-10 items-center justify-center rounded-md bg-primary/10 text-xs font-bold text-primary">
+            {pos.code}
+          </span>
+        ) : "-";
+      },
+    },
+    {
       id: "actions",
       header: "",
       cell: ({ row }) => (
         <div className="flex items-center gap-1 justify-end">
           <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEdit(row.original)} title="Editar">
             <Pencil className="h-4 w-4" />
+          </Button>
+          <Button variant="ghost" size="icon" className="text-destructive h-8 w-8" onClick={() => handleDelete(row.original)} title="Eliminar">
+            <Trash2 className="h-4 w-4" />
           </Button>
         </div>
       ),
@@ -251,7 +303,7 @@ function AdminPlayersPage() {
   if (isLoading) return <LoadingState />;
 
   return (
-    <div className="space-y-6">
+    <div className="flex flex-col h-full gap-6">
       <PageHeader
         icon={UserCircle}
         title="Jugadores"
@@ -301,7 +353,7 @@ function AdminPlayersPage() {
       </div>
 
       {filteredPlayers && filteredPlayers.length > 0 ? (
-        <DataTable columns={columns} data={filteredPlayers} searchKey="full_name" searchPlaceholder="Buscar jugador..." pageSize={20} />
+        <DataTable columns={columns} data={filteredPlayers} searchKey="full_name" searchPlaceholder="Buscar jugador..." pageSize={20} scrollable />
       ) : (
         <EmptyState
           icon={UserCircle}
@@ -351,7 +403,7 @@ function AdminPlayersPage() {
               </div>
               <div className="space-y-2">
                 <Label htmlFor="birth_date">Fecha nacimiento</Label>
-                <Input id="birth_date" type="date" value={form.birth_date} onChange={(e) => setForm({ ...form, birth_date: e.target.value })} />
+                <DateInput id="birth_date" value={form.birth_date} onChange={(v) => setForm({ ...form, birth_date: v })} />
               </div>
               <div className="space-y-2">
                 <Label>Batea</Label>
@@ -371,6 +423,18 @@ function AdminPlayersPage() {
                   <SelectContent>
                     <SelectItem value="left">Izquierda</SelectItem>
                     <SelectItem value="right">Derecha</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="col-span-2 space-y-2">
+                <Label>Posición</Label>
+                <Select value={form.primary_position_id} onValueChange={(v) => setForm({ ...form, primary_position_id: v })}>
+                  <SelectTrigger><SelectValue placeholder="Sin posición" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">Sin posición</SelectItem>
+                    {positions?.map((pos) => (
+                      <SelectItem key={pos.id} value={pos.id}>{pos.code} - {pos.name}</SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
@@ -411,9 +475,12 @@ function AdminPlayersPage() {
           { key: "birth_date", label: "Fecha nacimiento (YYYY-MM-DD)" },
           { key: "bats", label: "Batea (left/right/switch)" },
           { key: "throws", label: "Lanza (left/right)" },
+          { key: "position_code", label: "Posición (código)" },
         ]}
         onImport={handleCsvImport}
       />
+
+      {confirmDialog}
     </div>
   );
 }

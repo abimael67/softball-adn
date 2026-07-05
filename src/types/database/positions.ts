@@ -1,9 +1,5 @@
-export interface Position {
-  id: string;
-  code: string;
-  name: string;
-  display_order: number;
-  created_at: string;
-}
+import type { Database } from "../../lib/supabase";
 
-export type PositionInsert = Omit<Position, "id" | "created_at">;
+export type Position = Database["public"]["Tables"]["positions"]["Row"];
+export type PositionInsert = Database["public"]["Tables"]["positions"]["Insert"];
+export type PositionUpdate = Database["public"]["Tables"]["positions"]["Update"];

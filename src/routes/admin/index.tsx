@@ -198,7 +198,7 @@ function AdminDashboard() {
                   <div>
                     <CardTitle className="text-lg">{activeSeason.name}</CardTitle>
                     <CardDescription>
-                      {new Date(activeSeason.start_date).toLocaleDateString("es")} - {new Date(activeSeason.end_date).toLocaleDateString("es")}
+                      {new Date(activeSeason.start_date + "T00:00:00").toLocaleDateString("es-ES", { day: "2-digit", month: "2-digit", year: "numeric" })} - {new Date(activeSeason.end_date + "T00:00:00").toLocaleDateString("es-ES", { day: "2-digit", month: "2-digit", year: "numeric" })}
                     </CardDescription>
                   </div>
                   <StatusBadge status={activeSeason.status} />

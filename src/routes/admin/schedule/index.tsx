@@ -156,7 +156,7 @@ function AdminSchedulePage() {
     }
     const confirmed = await confirm({
       title: "Eliminar partido",
-      description: `${teamMap.get(game.home_team_id)} vs ${teamMap.get(game.away_team_id)} - ${new Date(game.scheduled_at).toLocaleDateString("es")}`,
+      description: `${teamMap.get(game.home_team_id)} vs ${teamMap.get(game.away_team_id)} - ${new Date(game.scheduled_at).toLocaleDateString("es-ES", { day: "2-digit", month: "2-digit", year: "numeric" })}`,
       confirmLabel: "Eliminar",
       variant: "destructive",
     });
@@ -327,7 +327,7 @@ function AdminSchedulePage() {
       </div>
 
       {games && games.length > 0 ? (
-        <DataTable columns={columns} data={games} searchKey="matchup" searchPlaceholder="Buscar partido..." />
+        <DataTable columns={columns} data={[...games].sort((a, b) => new Date(a.scheduled_at).getTime() - new Date(b.scheduled_at).getTime())} searchKey="matchup" searchPlaceholder="Buscar partido..." />
       ) : (
         <EmptyState
           icon={CalendarDays}

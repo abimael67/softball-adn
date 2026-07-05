@@ -43,7 +43,8 @@ export class NotFoundError extends AppError {
 
 export class DatabaseError extends AppError {
   constructor(message: string, details?: unknown) {
-    super(message, "DATABASE_ERROR", details);
+    const detailsMessage = details instanceof Error ? details.message : typeof details === 'object' && details !== null && 'message' in details ? String((details as { message: unknown }).message) : '';
+    super(detailsMessage || message, "DATABASE_ERROR", details);
     this.name = "DatabaseError";
   }
 }
@@ -61,6 +62,10 @@ export function handleError(error: unknown): AppError {
 }
 
 export function getUserFriendlyMessage(error: AppError): string {
+  if (error.code === "DATABASE_ERROR" && error.message) {
+    return error.message;
+  }
+
   const messages: Record<string, string> = {
     AUTHENTICATION_ERROR: "Debes iniciar sesión para continuar",
     AUTHORIZATION_ERROR: "No tienes permisos para realizar esta acción",

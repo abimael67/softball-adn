@@ -1,8 +1,8 @@
 import { Link, useNavigate } from "@tanstack/react-router";
-import { Menu, X, Moon, Sun, LogOut } from "lucide-react";
+import { Menu, X, LogOut } from "lucide-react";
 import { useState } from "react";
 import { ROUTES } from "@/lib/constants";
-import { useTheme } from "@/hooks/use-theme";
+// import { useTheme } from "@/hooks/use-theme";
 import { useAuth } from "@/providers/auth-provider";
 
 const NAV_ITEMS = [
@@ -17,7 +17,7 @@ const NAV_ITEMS = [
 
 export function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const { isDark, setTheme } = useTheme();
+  // const { isDark, setTheme } = useTheme();
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
 
@@ -27,18 +27,22 @@ export function Header() {
   };
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+    <header className="bg-background/95 supports-[backdrop-filter]:bg-background/60 sticky top-0 z-50 w-full border-b backdrop-blur">
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
-        <Link to={ROUTES.HOME} className="flex items-center gap-2 font-bold text-xl text-primary">
-          Liga de Softball
+        <Link to={ROUTES.HOME} className="flex items-center gap-2">
+          <img
+            src="https://pub-27bf0bf9c1e447639bcb4a0a3693697b.r2.dev/logo%20lh.png"
+            alt="Liga Deportiva La Hermandad"
+            className="h-24 w-auto"
+          />
         </Link>
 
-        <nav className="hidden md:flex items-center gap-6">
+        <nav className="hidden items-center gap-6 md:flex">
           {NAV_ITEMS.map((item) => (
             <Link
               key={item.to}
               to={item.to}
-              className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground [&.active]:text-foreground"
+              className="text-muted-foreground hover:text-foreground [&.active]:text-foreground text-sm font-medium transition-colors"
             >
               {item.label}
             </Link>
@@ -50,14 +54,14 @@ export function Header() {
             <>
               <Link
                 to="/admin"
-                className="text-xs text-muted-foreground hover:text-foreground hidden sm:block"
+                className="text-muted-foreground hover:text-foreground hidden text-xs sm:block"
               >
                 Admin
               </Link>
               <button
                 type="button"
                 onClick={handleSignOut}
-                className="inline-flex h-9 items-center gap-1.5 rounded-md px-3 text-sm text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
+                className="text-muted-foreground hover:bg-accent hover:text-accent-foreground inline-flex h-9 items-center gap-1.5 rounded-md px-3 text-sm transition-colors"
                 title="Cerrar sesión"
               >
                 <LogOut className="h-4 w-4" />
@@ -66,23 +70,26 @@ export function Header() {
             </>
           )}
           {!user && (
-            <Link to="/login" className="text-sm font-medium text-muted-foreground hover:text-foreground">
+            <Link
+              to="/login"
+              className="text-muted-foreground hover:text-foreground text-sm font-medium"
+            >
               Iniciar sesión
             </Link>
           )}
-          <button
+          {/* <button
             type="button"
             onClick={() => setTheme(isDark ? "light" : "dark")}
-            className="inline-flex h-9 w-9 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
+            className="text-muted-foreground hover:bg-accent hover:text-accent-foreground inline-flex h-9 w-9 items-center justify-center rounded-md transition-colors"
             aria-label="Cambiar tema"
           >
             {isDark ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
-          </button>
+          </button> */}
 
           <button
             type="button"
             onClick={() => setIsMenuOpen(!isMenuOpen)}
-            className="inline-flex h-9 w-9 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground md:hidden"
+            className="text-muted-foreground hover:bg-accent hover:text-accent-foreground inline-flex h-9 w-9 items-center justify-center rounded-md transition-colors md:hidden"
             aria-label="Menú"
           >
             {isMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
@@ -97,7 +104,7 @@ export function Header() {
               <Link
                 key={item.to}
                 to={item.to}
-                className="rounded-md px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground [&.active]:bg-accent [&.active]:text-accent-foreground"
+                className="text-muted-foreground hover:bg-accent hover:text-accent-foreground [&.active]:bg-accent [&.active]:text-accent-foreground rounded-md px-3 py-2 text-sm font-medium transition-colors"
                 onClick={() => setIsMenuOpen(false)}
               >
                 {item.label}
@@ -105,19 +112,30 @@ export function Header() {
             ))}
             {user && (
               <>
-                <Link to="/admin" className="rounded-md px-3 py-2 text-sm font-medium text-muted-foreground hover:bg-accent" onClick={() => setIsMenuOpen(false)}>
+                <Link
+                  to="/admin"
+                  className="text-muted-foreground hover:bg-accent rounded-md px-3 py-2 text-sm font-medium"
+                  onClick={() => setIsMenuOpen(false)}
+                >
                   Admin
                 </Link>
                 <button
-                  onClick={() => { handleSignOut(); setIsMenuOpen(false); }}
-                  className="rounded-md px-3 py-2 text-sm font-medium text-destructive hover:bg-accent text-left"
+                  onClick={() => {
+                    handleSignOut();
+                    setIsMenuOpen(false);
+                  }}
+                  className="text-destructive hover:bg-accent rounded-md px-3 py-2 text-left text-sm font-medium"
                 >
                   Cerrar sesión ({user.email})
                 </button>
               </>
             )}
             {!user && (
-              <Link to="/login" className="rounded-md px-3 py-2 text-sm font-medium text-muted-foreground hover:bg-accent" onClick={() => setIsMenuOpen(false)}>
+              <Link
+                to="/login"
+                className="text-muted-foreground hover:bg-accent rounded-md px-3 py-2 text-sm font-medium"
+                onClick={() => setIsMenuOpen(false)}
+              >
                 Iniciar sesión
               </Link>
             )}

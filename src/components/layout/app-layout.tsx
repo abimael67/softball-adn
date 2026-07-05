@@ -13,13 +13,13 @@ export function AppLayout({ children }: AppLayoutProps) {
   const isAdmin = matchRoute({ to: "/admin", fuzzy: true });
 
   return (
-    <div className="flex min-h-screen flex-col">
+    <div className="flex h-screen flex-col overflow-hidden">
       <Header />
       {isAdmin && <AdminMobileNav />}
-      <div className="flex flex-1">
+      <div className="flex flex-1 min-h-0">
         {isAdmin && <AdminSidebar />}
-        <main className="flex-1">
-          <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">{children}</div>
+        <main className="flex-1 min-h-0 overflow-y-auto">
+          <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8 h-full">{children}</div>
         </main>
       </div>
       <Footer />

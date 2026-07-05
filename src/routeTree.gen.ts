@@ -29,6 +29,7 @@ import { Route as AdminSettingsIndexRouteImport } from './routes/admin/settings/
 import { Route as AdminSeasonsIndexRouteImport } from './routes/admin/seasons/index'
 import { Route as AdminScheduleIndexRouteImport } from './routes/admin/schedule/index'
 import { Route as AdminRostersIndexRouteImport } from './routes/admin/rosters/index'
+import { Route as AdminPositionsIndexRouteImport } from './routes/admin/positions/index'
 import { Route as AdminPlayersIndexRouteImport } from './routes/admin/players/index'
 import { Route as AdminGameReportsIndexRouteImport } from './routes/admin/game-reports/index'
 import { Route as AdminDashboardIndexRouteImport } from './routes/admin/dashboard/index'
@@ -135,6 +136,11 @@ const AdminRostersIndexRoute = AdminRostersIndexRouteImport.update({
   path: '/admin/rosters/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminPositionsIndexRoute = AdminPositionsIndexRouteImport.update({
+  id: '/admin/positions/',
+  path: '/admin/positions/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdminPlayersIndexRoute = AdminPlayersIndexRouteImport.update({
   id: '/admin/players/',
   path: '/admin/players/',
@@ -179,6 +185,7 @@ export interface FileRoutesByFullPath {
   '/admin/dashboard/': typeof AdminDashboardIndexRoute
   '/admin/game-reports/': typeof AdminGameReportsIndexRoute
   '/admin/players/': typeof AdminPlayersIndexRoute
+  '/admin/positions/': typeof AdminPositionsIndexRoute
   '/admin/rosters/': typeof AdminRostersIndexRoute
   '/admin/schedule/': typeof AdminScheduleIndexRoute
   '/admin/seasons/': typeof AdminSeasonsIndexRoute
@@ -206,6 +213,7 @@ export interface FileRoutesByTo {
   '/admin/dashboard': typeof AdminDashboardIndexRoute
   '/admin/game-reports': typeof AdminGameReportsIndexRoute
   '/admin/players': typeof AdminPlayersIndexRoute
+  '/admin/positions': typeof AdminPositionsIndexRoute
   '/admin/rosters': typeof AdminRostersIndexRoute
   '/admin/schedule': typeof AdminScheduleIndexRoute
   '/admin/seasons': typeof AdminSeasonsIndexRoute
@@ -234,6 +242,7 @@ export interface FileRoutesById {
   '/admin/dashboard/': typeof AdminDashboardIndexRoute
   '/admin/game-reports/': typeof AdminGameReportsIndexRoute
   '/admin/players/': typeof AdminPlayersIndexRoute
+  '/admin/positions/': typeof AdminPositionsIndexRoute
   '/admin/rosters/': typeof AdminRostersIndexRoute
   '/admin/schedule/': typeof AdminScheduleIndexRoute
   '/admin/seasons/': typeof AdminSeasonsIndexRoute
@@ -263,6 +272,7 @@ export interface FileRouteTypes {
     | '/admin/dashboard/'
     | '/admin/game-reports/'
     | '/admin/players/'
+    | '/admin/positions/'
     | '/admin/rosters/'
     | '/admin/schedule/'
     | '/admin/seasons/'
@@ -290,6 +300,7 @@ export interface FileRouteTypes {
     | '/admin/dashboard'
     | '/admin/game-reports'
     | '/admin/players'
+    | '/admin/positions'
     | '/admin/rosters'
     | '/admin/schedule'
     | '/admin/seasons'
@@ -317,6 +328,7 @@ export interface FileRouteTypes {
     | '/admin/dashboard/'
     | '/admin/game-reports/'
     | '/admin/players/'
+    | '/admin/positions/'
     | '/admin/rosters/'
     | '/admin/schedule/'
     | '/admin/seasons/'
@@ -345,6 +357,7 @@ export interface RootRouteChildren {
   AdminDashboardIndexRoute: typeof AdminDashboardIndexRoute
   AdminGameReportsIndexRoute: typeof AdminGameReportsIndexRoute
   AdminPlayersIndexRoute: typeof AdminPlayersIndexRoute
+  AdminPositionsIndexRoute: typeof AdminPositionsIndexRoute
   AdminRostersIndexRoute: typeof AdminRostersIndexRoute
   AdminScheduleIndexRoute: typeof AdminScheduleIndexRoute
   AdminSeasonsIndexRoute: typeof AdminSeasonsIndexRoute
@@ -497,6 +510,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminRostersIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/positions/': {
+      id: '/admin/positions/'
+      path: '/admin/positions'
+      fullPath: '/admin/positions/'
+      preLoaderRoute: typeof AdminPositionsIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admin/players/': {
       id: '/admin/players/'
       path: '/admin/players'
@@ -553,6 +573,7 @@ const rootRouteChildren: RootRouteChildren = {
   AdminDashboardIndexRoute: AdminDashboardIndexRoute,
   AdminGameReportsIndexRoute: AdminGameReportsIndexRoute,
   AdminPlayersIndexRoute: AdminPlayersIndexRoute,
+  AdminPositionsIndexRoute: AdminPositionsIndexRoute,
   AdminRostersIndexRoute: AdminRostersIndexRoute,
   AdminScheduleIndexRoute: AdminScheduleIndexRoute,
   AdminSeasonsIndexRoute: AdminSeasonsIndexRoute,

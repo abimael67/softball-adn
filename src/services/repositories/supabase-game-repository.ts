@@ -49,6 +49,20 @@ export class SupabaseGameRepository implements GameRepository {
     return data;
   }
 
+  async findRecentByTeam(teamId: string, seasonId: string, limit: number): Promise<Game[]> {
+    const { data, error } = await supabase
+      .from("games")
+      .select("*")
+      .eq("season_id", seasonId)
+      .or(`home_team_id.eq.${teamId},away_team_id.eq.${teamId}`)
+      .in("status", ["published", "approved", "completed"])
+      .order("scheduled_at", { ascending: false })
+      .limit(limit);
+
+    if (error) throw new DatabaseError("Failed to fetch recent games for team", error);
+    return data;
+  }
+
   async findByStatus(status: GameWorkflowStatus, seasonId: string): Promise<Game[]> {
     const { data, error } = await supabase
       .from("games")

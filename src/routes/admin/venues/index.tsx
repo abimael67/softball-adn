@@ -107,10 +107,22 @@ function AdminVenuesPage() {
     { accessorKey: "address", header: "Dirección", cell: ({ getValue }) => getValue<string>() || "-" },
     {
       id: "coordinates",
-      header: "Coordenadas",
+      header: "Ubicación",
       cell: ({ row }) => {
         const v = row.original;
-        return v.latitude && v.longitude ? `${v.latitude}, ${v.longitude}` : "-";
+        if (!v.latitude || !v.longitude) return "-";
+        const mapsUrl = `https://www.google.com/maps?q=${v.latitude},${v.longitude}`;
+        return (
+          <a
+            href={mapsUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1 text-primary hover:underline"
+          >
+            <MapPin className="h-4 w-4" />
+            <span>Ver mapa</span>
+          </a>
+        );
       },
     },
     {

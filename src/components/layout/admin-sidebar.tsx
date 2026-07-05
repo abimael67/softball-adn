@@ -13,6 +13,7 @@ import {
   UsersRound,
   LayoutDashboard,
   Church,
+  Crosshair,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -22,6 +23,7 @@ const ADMIN_NAV = [
   { label: "Sedes", to: "/admin/venues", icon: MapPin },
   { label: "Equipos", to: "/admin/teams", icon: Users },
   { label: "Jugadores", to: "/admin/players", icon: UserCircle },
+  { label: "Posiciones", to: "/admin/positions", icon: Crosshair },
   { label: "Iglesias", to: "/admin/churches", icon: Church },
   { label: "Rosters", to: "/admin/rosters", icon: UserCheck },
   { label: "Calendario", to: "/admin/schedule", icon: CalendarDays },
