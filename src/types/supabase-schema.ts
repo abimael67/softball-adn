@@ -325,9 +325,13 @@ export type Database = {
         Row: {
           approved_at: string | null
           approved_by: string | null
+          away_errors: number | null
+          away_hits: number | null
           away_score: number | null
           away_team_id: string
           created_at: string
+          home_errors: number | null
+          home_hits: number | null
           home_score: number | null
           home_team_id: string
           id: string
@@ -347,9 +351,13 @@ export type Database = {
         Insert: {
           approved_at?: string | null
           approved_by?: string | null
+          away_errors?: number | null
+          away_hits?: number | null
           away_score?: number | null
           away_team_id: string
           created_at?: string
+          home_errors?: number | null
+          home_hits?: number | null
           home_score?: number | null
           home_team_id: string
           id?: string
@@ -369,9 +377,13 @@ export type Database = {
         Update: {
           approved_at?: string | null
           approved_by?: string | null
+          away_errors?: number | null
+          away_hits?: number | null
           away_score?: number | null
           away_team_id?: string
           created_at?: string
+          home_errors?: number | null
+          home_hits?: number | null
           home_score?: number | null
           home_team_id?: string
           id?: string

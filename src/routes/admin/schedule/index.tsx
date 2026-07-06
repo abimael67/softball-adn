@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
-import { createFileRoute } from "@tanstack/react-router";
-import { CalendarDays, Plus, Pencil, Trash2, Upload, Download } from "lucide-react";
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { CalendarDays, Plus, Pencil, Trash2, Upload, Download, ClipboardCheck } from "lucide-react";
 import type { ColumnDef } from "@tanstack/react-table";
 import {
   useSeasons,
@@ -116,19 +116,40 @@ function AdminSchedulePage() {
     }
 
     try {
-      const data = {
-        season_id: seasonId,
-        home_team_id: form.home_team_id,
-        away_team_id: form.away_team_id,
-        venue_id: form.venue_id || null,
-        scheduled_at: new Date(form.scheduled_at).toISOString(),
-        status: "scheduled" as const,
-      };
-
       if (editingGame) {
-        await updateGame.mutateAsync({ id: editingGame.id, data: data as GameUpdate });
+        // Al editar, solo enviar los campos que cambiaron
+        const data: GameUpdate = {};
+        
+        if (editingGame.home_team_id !== form.home_team_id) {
+          data.home_team_id = form.home_team_id;
+        }
+        if (editingGame.away_team_id !== form.away_team_id) {
+          data.away_team_id = form.away_team_id;
+        }
+        if ((editingGame.venue_id || "") !== (form.venue_id || "")) {
+          data.venue_id = form.venue_id || null;
+        }
+        if (editingGame.scheduled_at !== new Date(form.scheduled_at).toISOString()) {
+          data.scheduled_at = new Date(form.scheduled_at).toISOString();
+        }
+        
+        // Solo establecer status si no tiene scores
+        if (editingGame.home_score === null && editingGame.away_score === null) {
+          data.status = "scheduled";
+        }
+
+        await updateGame.mutateAsync({ id: editingGame.id, data });
         toast({ title: "Partido actualizado", variant: "success" });
       } else {
+        const data = {
+          season_id: seasonId,
+          home_team_id: form.home_team_id,
+          away_team_id: form.away_team_id,
+          venue_id: form.venue_id || null,
+          scheduled_at: new Date(form.scheduled_at).toISOString(),
+          status: "scheduled" as const,
+        };
+
         const duplicate = games?.find(
           (g) =>
             g.home_team_id === data.home_team_id &&
@@ -217,6 +238,50 @@ function AdminSchedulePage() {
     );
   };
 
+  const sortedGames = useMemo(() => {
+    if (!games) return [];
+    return [...games].sort((a, b) => {
+      const dateA = new Date(a.scheduled_at).getTime();
+      const dateB = new Date(b.scheduled_at).getTime();
+      if (dateA !== dateB) return dateA - dateB;
+      
+      const venueA = a.venue_id || "";
+      const venueB = b.venue_id || "";
+      return venueA.localeCompare(venueB);
+    });
+  }, [games]);
+
+  const gameGroups = useMemo(() => {
+    const groups: Record<string, { date: string; venue: string; games: Game[] }> = {};
+    
+    sortedGames.forEach((game) => {
+      const date = new Date(game.scheduled_at).toLocaleDateString("es-ES", {
+        weekday: "long",
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+      });
+      const venueName = venueMap.get(game.venue_id || "") || "Sin sede";
+      const key = `${date}||${venueName}`;
+      
+      if (!groups[key]) {
+        groups[key] = {
+          date,
+          venue: venueName,
+          games: [],
+        };
+      }
+      groups[key].games.push(game);
+    });
+    
+    return Object.values(groups).sort((a, b) => {
+      const dateA = new Date(a.games[0].scheduled_at).getTime();
+      const dateB = new Date(b.games[0].scheduled_at).getTime();
+      if (dateA !== dateB) return dateA - dateB;
+      return a.venue.localeCompare(b.venue);
+    });
+  }, [sortedGames, venueMap]);
+
   const columns: ColumnDef<Game>[] = [
     {
       accessorKey: "scheduled_at",
@@ -269,6 +334,11 @@ function AdminSchedulePage() {
         const g = row.original;
         return (
           <div className="flex items-center gap-1 justify-end">
+            <Button asChild variant="ghost" size="icon" className="h-8 w-8" title="Estadísticas">
+              <Link to="/admin/game-reports/$gameId" params={{ gameId: g.id }}>
+                <ClipboardCheck className="h-4 w-4" />
+              </Link>
+            </Button>
             <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEdit(g)} title="Editar">
               <Pencil className="h-4 w-4" />
             </Button>
@@ -326,8 +396,25 @@ function AdminSchedulePage() {
         </Select>
       </div>
 
-      {games && games.length > 0 ? (
-        <DataTable columns={columns} data={[...games].sort((a, b) => new Date(a.scheduled_at).getTime() - new Date(b.scheduled_at).getTime())} searchKey="matchup" searchPlaceholder="Buscar partido..." />
+      {gameGroups.length > 0 ? (
+        <div className="space-y-8">
+          {gameGroups.map((group) => (
+            <div key={`${group.date}||${group.venue}`} className="space-y-4">
+              <div className="flex items-center gap-2 border-b pb-2">
+                <CalendarDays className="h-5 w-5 text-primary" />
+                <h3 className="text-lg font-semibold capitalize">{group.date}</h3>
+                <span className="text-muted-foreground">•</span>
+                <span className="text-sm text-muted-foreground">{group.venue}</span>
+              </div>
+              <DataTable 
+                columns={columns} 
+                data={group.games} 
+                searchKey="matchup" 
+                searchPlaceholder="Buscar partido..." 
+              />
+            </div>
+          ))}
+        </div>
       ) : (
         <EmptyState
           icon={CalendarDays}

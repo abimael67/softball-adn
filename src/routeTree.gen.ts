@@ -35,6 +35,7 @@ import { Route as AdminGameReportsIndexRouteImport } from './routes/admin/game-r
 import { Route as AdminDashboardIndexRouteImport } from './routes/admin/dashboard/index'
 import { Route as AdminChurchesIndexRouteImport } from './routes/admin/churches/index'
 import { Route as AdminAuditLogIndexRouteImport } from './routes/admin/audit-log/index'
+import { Route as AdminGameReportsGameIdRouteImport } from './routes/admin/game-reports/$gameId'
 
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
@@ -166,6 +167,11 @@ const AdminAuditLogIndexRoute = AdminAuditLogIndexRouteImport.update({
   path: '/admin/audit-log/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminGameReportsGameIdRoute = AdminGameReportsGameIdRouteImport.update({
+  id: '/admin/game-reports/$gameId',
+  path: '/admin/game-reports/$gameId',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -180,6 +186,7 @@ export interface FileRoutesByFullPath {
   '/schedule/': typeof ScheduleIndexRoute
   '/standings/': typeof StandingsIndexRoute
   '/teams/': typeof TeamsIndexRoute
+  '/admin/game-reports/$gameId': typeof AdminGameReportsGameIdRoute
   '/admin/audit-log/': typeof AdminAuditLogIndexRoute
   '/admin/churches/': typeof AdminChurchesIndexRoute
   '/admin/dashboard/': typeof AdminDashboardIndexRoute
@@ -208,6 +215,7 @@ export interface FileRoutesByTo {
   '/schedule': typeof ScheduleIndexRoute
   '/standings': typeof StandingsIndexRoute
   '/teams': typeof TeamsIndexRoute
+  '/admin/game-reports/$gameId': typeof AdminGameReportsGameIdRoute
   '/admin/audit-log': typeof AdminAuditLogIndexRoute
   '/admin/churches': typeof AdminChurchesIndexRoute
   '/admin/dashboard': typeof AdminDashboardIndexRoute
@@ -237,6 +245,7 @@ export interface FileRoutesById {
   '/schedule/': typeof ScheduleIndexRoute
   '/standings/': typeof StandingsIndexRoute
   '/teams/': typeof TeamsIndexRoute
+  '/admin/game-reports/$gameId': typeof AdminGameReportsGameIdRoute
   '/admin/audit-log/': typeof AdminAuditLogIndexRoute
   '/admin/churches/': typeof AdminChurchesIndexRoute
   '/admin/dashboard/': typeof AdminDashboardIndexRoute
@@ -267,6 +276,7 @@ export interface FileRouteTypes {
     | '/schedule/'
     | '/standings/'
     | '/teams/'
+    | '/admin/game-reports/$gameId'
     | '/admin/audit-log/'
     | '/admin/churches/'
     | '/admin/dashboard/'
@@ -295,6 +305,7 @@ export interface FileRouteTypes {
     | '/schedule'
     | '/standings'
     | '/teams'
+    | '/admin/game-reports/$gameId'
     | '/admin/audit-log'
     | '/admin/churches'
     | '/admin/dashboard'
@@ -323,6 +334,7 @@ export interface FileRouteTypes {
     | '/schedule/'
     | '/standings/'
     | '/teams/'
+    | '/admin/game-reports/$gameId'
     | '/admin/audit-log/'
     | '/admin/churches/'
     | '/admin/dashboard/'
@@ -352,6 +364,7 @@ export interface RootRouteChildren {
   ScheduleIndexRoute: typeof ScheduleIndexRoute
   StandingsIndexRoute: typeof StandingsIndexRoute
   TeamsIndexRoute: typeof TeamsIndexRoute
+  AdminGameReportsGameIdRoute: typeof AdminGameReportsGameIdRoute
   AdminAuditLogIndexRoute: typeof AdminAuditLogIndexRoute
   AdminChurchesIndexRoute: typeof AdminChurchesIndexRoute
   AdminDashboardIndexRoute: typeof AdminDashboardIndexRoute
@@ -552,6 +565,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminAuditLogIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/game-reports/$gameId': {
+      id: '/admin/game-reports/$gameId'
+      path: '/admin/game-reports/$gameId'
+      fullPath: '/admin/game-reports/$gameId'
+      preLoaderRoute: typeof AdminGameReportsGameIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -568,6 +588,7 @@ const rootRouteChildren: RootRouteChildren = {
   ScheduleIndexRoute: ScheduleIndexRoute,
   StandingsIndexRoute: StandingsIndexRoute,
   TeamsIndexRoute: TeamsIndexRoute,
+  AdminGameReportsGameIdRoute: AdminGameReportsGameIdRoute,
   AdminAuditLogIndexRoute: AdminAuditLogIndexRoute,
   AdminChurchesIndexRoute: AdminChurchesIndexRoute,
   AdminDashboardIndexRoute: AdminDashboardIndexRoute,
