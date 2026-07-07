@@ -16,7 +16,7 @@ function normalize(str: string) {
   return str.normalize("NFD").replace(/\p{Diacritic}/gu, "").toLowerCase();
 }
 
-const accentInsensitiveFilter: FilterFn<unknown> = (row, columnId, filterValue) => {
+const accentInsensitiveFilter: FilterFn<any> = (row, columnId, filterValue) => {
   const value = row.getValue(columnId);
   if (typeof value !== "string") return false;
   return normalize(value).includes(normalize(filterValue));
@@ -63,7 +63,7 @@ export function DataTable<TData, TValue>({
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [globalFilter, setGlobalFilter] = useState("");
 
-  const table = useReactTable({
+  const table = useReactTable<TData>({
     data,
     columns,
     getCoreRowModel: getCoreRowModel(),
