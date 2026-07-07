@@ -2,9 +2,12 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { usePlayer } from "@/hooks/use-players";
 import { usePositions } from "@/hooks/use-positions";
 import { useChurch } from "@/hooks/use-churches";
-import { useLatestSeason, usePlayerSeasonStats, usePlayerGameBatting } from "@/hooks/use-public-data";
+import {
+  useLatestSeason,
+  usePlayerSeasonStats,
+  usePlayerGameBatting,
+} from "@/hooks/use-public-data";
 import { storageService } from "@/services/storage-service";
-import { PlayerStatsTables } from "@/components/public/player-stats-tables";
 import { PlayerStatsHighlights } from "@/components/public/player-stats-highlights";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -55,7 +58,7 @@ function PlayerDetailsPage() {
   if (!player) {
     return (
       <Card>
-        <CardContent className="p-8 text-center text-muted-foreground">
+        <CardContent className="text-muted-foreground p-8 text-center">
           Jugador no encontrado
         </CardContent>
       </Card>
@@ -69,33 +72,33 @@ function PlayerDetailsPage() {
     <div className="space-y-6">
       <Card>
         <CardContent className="p-8">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-6">
+          <div className="flex flex-col items-start gap-6 sm:flex-row sm:items-center">
             <Avatar className="h-24 w-24">
               {player.photo_key ? (
-                <AvatarImage
-                  src={storageService.getPublicUrl(player.photo_key)}
-                  alt={fullName}
-                />
+                <AvatarImage src={storageService.getPublicUrl(player.photo_key)} alt={fullName} />
               ) : (
                 <AvatarFallback className="bg-muted">
-                  <UserCircle className="h-12 w-12 text-muted-foreground" />
+                  <UserCircle className="text-muted-foreground h-12 w-12" />
                 </AvatarFallback>
               )}
             </Avatar>
             <div className="flex-1">
-              <h1 className="text-3xl font-bold text-foreground">
+              <h1 className="text-foreground text-3xl font-bold">
                 {fullName}
                 {player.nickname && (
-                  <span className="ml-2 text-xl text-muted-foreground">"{player.nickname}"</span>
+                  <span className="text-muted-foreground ml-2 text-xl">"{player.nickname}"</span>
                 )}
               </h1>
-              <div className="flex flex-wrap items-center gap-2 mt-2">
-                {position && (
-                  <Badge variant="secondary">{position.name}</Badge>
-                )}
+              <div className="mt-2 flex flex-wrap items-center gap-2">
+                {position && <Badge variant="secondary">{position.name}</Badge>}
                 {player.bats && (
                   <Badge variant="outline">
-                    Batea: {player.bats === "left" ? "Izquierda" : player.bats === "right" ? "Derecha" : "Ambos"}
+                    Batea:{" "}
+                    {player.bats === "left"
+                      ? "Izquierda"
+                      : player.bats === "right"
+                        ? "Derecha"
+                        : "Ambos"}
                   </Badge>
                 )}
                 {player.throws && (
@@ -105,16 +108,14 @@ function PlayerDetailsPage() {
                 )}
               </div>
               {church && (
-                <div className="flex items-center gap-1 text-muted-foreground mt-2">
+                <div className="text-muted-foreground mt-2 flex items-center gap-1">
                   <Church className="h-4 w-4" />
                   <span>{church.name}</span>
                   {church.city && <span className="text-sm">- {church.city}</span>}
                 </div>
               )}
               {season && (
-                <p className="text-sm text-muted-foreground mt-2">
-                  Temporada {season.name}
-                </p>
+                <p className="text-muted-foreground mt-2 text-sm">Temporada {season.name}</p>
               )}
             </div>
           </div>
@@ -170,8 +171,10 @@ function PlayerDetailsPage() {
                         return (
                           <TableRow key={game.id}>
                             <TableCell
-                              className="font-medium whitespace-nowrap cursor-pointer hover:text-primary transition-colors"
-                              onClick={() => navigate({ to: "/schedule/$gameId", params: { gameId: game.id } })}
+                              className="hover:text-primary cursor-pointer font-medium whitespace-nowrap transition-colors"
+                              onClick={() =>
+                                navigate({ to: "/schedule/$gameId", params: { gameId: game.id } })
+                              }
                             >
                               {date}
                             </TableCell>
@@ -189,8 +192,11 @@ function PlayerDetailsPage() {
                         );
                       })}
                       {stats.batting && (
-                        <TableRow className="font-semibold border-t-2">
-                          <TableCell colSpan={2} className="text-muted-foreground text-xs uppercase tracking-wider">
+                        <TableRow className="border-t-2 font-semibold">
+                          <TableCell
+                            colSpan={2}
+                            className="text-muted-foreground text-xs tracking-wider uppercase"
+                          >
                             Totales
                           </TableCell>
                           <TableCell>{stats.batting.atBats}</TableCell>
@@ -210,7 +216,7 @@ function PlayerDetailsPage() {
               </Card>
             )}
 
-            <PlayerStatsTables batting={null} pitching={stats.pitching} fielding={stats.fielding} />
+            {/* <PlayerStatsTables batting={null} pitching={stats.pitching} fielding={stats.fielding} /> */}
           </>
         )
       )}
