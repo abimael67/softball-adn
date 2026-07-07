@@ -1,7 +1,20 @@
 import { useState, useMemo, useEffect } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowLeft, ClipboardCheck, Target, Activity, Save } from "lucide-react";
-import { useGame, useRostersByTeam, usePlayers, useTeams, usePositions, useUpdateGame } from "@/hooks";
+import { 
+  useGame, 
+  useRostersByTeam, 
+  usePlayers, 
+  useTeams, 
+  usePositions, 
+  useUpdateGame,
+  useBattingStatsByGame,
+  usePitchingStatsByGame,
+  useCreateBattingStats,
+  useUpdateBattingStats,
+  useCreatePitchingStats,
+  useUpdatePitchingStats,
+} from "@/hooks";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -13,7 +26,7 @@ import { PageHeader, LoadingState } from "@/components/admin/admin-shared";
 import { storageService } from "@/services/storage-service";
 import { handleError, getUserFriendlyMessage } from "@/lib/errors";
 import { toast } from "@/components/ui/toast";
-import type { Player, SeasonRoster, GameUpdate } from "@/types/database";
+import type { Player, SeasonRoster, GameUpdate, BattingStatsInsert, PitchingStatsInsert } from "@/types/database";
 
 export const Route = createFileRoute("/admin/game-reports/$gameId")({
   component: GameStatsEntryPage,
@@ -22,6 +35,12 @@ export const Route = createFileRoute("/admin/game-reports/$gameId")({
 interface RosterPlayer {
   roster: SeasonRoster;
   player: Player;
+}
+
+interface PlayerStats {
+  batting: Record<string, number>;
+  pitching: Record<string, number>;
+  showPitching: boolean;
 }
 
 function GroupSection({
@@ -70,44 +89,37 @@ function GroupSection({
 function PlayerAccordion({
   rosterPlayer,
   position,
+  stats,
+  onStatsChange,
 }: {
   rosterPlayer: RosterPlayer;
   position?: string;
+  stats: PlayerStats;
+  onStatsChange: (stats: PlayerStats) => void;
 }) {
-  const [batting, setBatting] = useState<Record<string, number>>({
-    at_bats: 0,
-    runs: 0,
-    hits: 0,
-    doubles: 0,
-    triples: 0,
-    home_runs: 0,
-    rbi: 0,
-    walks: 0,
-    strikeouts: 0,
-    stolen_bases: 0,
-    caught_stealing: 0,
-    hit_by_pitch: 0,
-    sacrifice_flies: 0,
-  });
-
-  const [pitching, setPitching] = useState<Record<string, number>>({
-    innings_pitched: 0,
-    hits_allowed: 0,
-    runs_allowed: 0,
-    earned_runs: 0,
-    walks: 0,
-    strikeouts: 0,
-    home_runs_allowed: 0,
-    wild_pitches: 0,
-    wins: 0,
-    losses: 0,
-    saves: 0,
-  });
-
-  const [showPitching, setShowPitching] = useState(false);
-
   const { player, roster } = rosterPlayer;
   const displayName = `${player.last_name}, ${player.first_name}`;
+
+  const updateBatting = (key: string, value: number) => {
+    onStatsChange({
+      ...stats,
+      batting: { ...stats.batting, [key]: value },
+    });
+  };
+
+  const updatePitching = (key: string, value: number) => {
+    onStatsChange({
+      ...stats,
+      pitching: { ...stats.pitching, [key]: value },
+    });
+  };
+
+  const toggleShowPitching = (show: boolean) => {
+    onStatsChange({
+      ...stats,
+      showPitching: show,
+    });
+  };
 
   return (
     <AccordionItem value={player.id} className="border rounded-lg px-4 mb-3 data-[state=open]:border-primary/30">
@@ -151,8 +163,8 @@ function PlayerAccordion({
               { key: "hit_by_pitch", label: "Golpeado", abbr: "HBP" },
               { key: "sacrifice_flies", label: "Fly de sacrificio", abbr: "SF" },
             ]}
-            values={batting}
-            onChange={(key, val) => setBatting((prev) => ({ ...prev, [key]: val }))}
+            values={stats.batting}
+            onChange={updateBatting}
           />
 
           <Separator />
@@ -166,12 +178,12 @@ function PlayerAccordion({
             </div>
             <Switch
               id={`pitching-${player.id}`}
-              checked={showPitching}
-              onCheckedChange={setShowPitching}
+              checked={stats.showPitching}
+              onCheckedChange={toggleShowPitching}
             />
           </div>
 
-          {showPitching && (
+          {stats.showPitching && (
             <GroupSection
               title="Pitcheo"
               icon={Activity}
@@ -188,8 +200,8 @@ function PlayerAccordion({
                 { key: "losses", label: "Derrotas", abbr: "L" },
                 { key: "saves", label: "Salvados", abbr: "SV" },
               ]}
-              values={pitching}
-              onChange={(key, val) => setPitching((prev) => ({ ...prev, [key]: val }))}
+              values={stats.pitching}
+              onChange={updatePitching}
             />
           )}
         </div>
@@ -222,6 +234,8 @@ function TeamSection({
   rosterPlayers,
   positions,
   accordionValue,
+  playerStats,
+  onPlayerStatsChange,
 }: {
   teamName: string;
   teamShortName: string;
@@ -229,6 +243,8 @@ function TeamSection({
   rosterPlayers: RosterPlayer[];
   positions: Map<string, string>;
   accordionValue: string;
+  playerStats: Record<string, PlayerStats>;
+  onPlayerStatsChange: (playerId: string, stats: PlayerStats) => void;
 }) {
   return (
     <AccordionItem value={accordionValue} className="border rounded-lg data-[state=open]:border-primary/30">
@@ -254,6 +270,20 @@ function TeamSection({
                   key={rp.player.id}
                   rosterPlayer={rp}
                   position={positions.get(rp.player.primary_position_id ?? "")}
+                  stats={playerStats[rp.player.id] || {
+                    batting: {
+                      at_bats: 0, runs: 0, hits: 0, doubles: 0, triples: 0,
+                      home_runs: 0, rbi: 0, walks: 0, strikeouts: 0,
+                      stolen_bases: 0, caught_stealing: 0, hit_by_pitch: 0, sacrifice_flies: 0,
+                    },
+                    pitching: {
+                      innings_pitched: 0, hits_allowed: 0, runs_allowed: 0, earned_runs: 0,
+                      walks: 0, strikeouts: 0, home_runs_allowed: 0, wild_pitches: 0,
+                      wins: 0, losses: 0, saves: 0,
+                    },
+                    showPitching: false,
+                  }}
+                  onStatsChange={(stats) => onPlayerStatsChange(rp.player.id, stats)}
                 />
               ))}
             </Accordion>
@@ -483,6 +513,14 @@ function GameStatsEntryPage() {
     game?.season_id ?? "",
   );
 
+  const { data: battingStats = [] } = useBattingStatsByGame(gameId);
+  const { data: pitchingStats = [] } = usePitchingStatsByGame(gameId);
+
+  const createBatting = useCreateBattingStats();
+  const updateBatting = useUpdateBattingStats();
+  const createPitching = useCreatePitchingStats();
+  const updatePitching = useUpdatePitchingStats();
+
   const playerMap = useMemo(() => {
     const map = new Map<string, Player>();
     players?.forEach((p) => map.set(p.id, p));
@@ -516,6 +554,209 @@ function GameStatsEntryPage() {
       .sort((a, b) => (a.roster.jersey_number ?? 99) - (b.roster.jersey_number ?? 99));
   }, [awayRoster, playerMap]);
 
+  // Inicializar estado de stats desde la BD
+  const [playerStats, setPlayerStats] = useState<Record<string, PlayerStats>>({});
+
+  useEffect(() => {
+    if (!game) return;
+
+    const stats: Record<string, PlayerStats> = {};
+
+    // Inicializar todos los jugadores con valores por defecto
+    [...homePlayers, ...awayPlayers].forEach((rp) => {
+      stats[rp.player.id] = {
+        batting: {
+          at_bats: 0, runs: 0, hits: 0, doubles: 0, triples: 0,
+          home_runs: 0, rbi: 0, walks: 0, strikeouts: 0,
+          stolen_bases: 0, caught_stealing: 0, hit_by_pitch: 0, sacrifice_flies: 0,
+        },
+        pitching: {
+          innings_pitched: 0, hits_allowed: 0, runs_allowed: 0, earned_runs: 0,
+          walks: 0, strikeouts: 0, home_runs_allowed: 0, wild_pitches: 0,
+          wins: 0, losses: 0, saves: 0,
+        },
+        showPitching: false,
+      };
+    });
+
+    // Cargar stats de bateo existentes
+    battingStats.forEach((stat) => {
+      if (stats[stat.player_id]) {
+        stats[stat.player_id].batting = {
+          at_bats: stat.at_bats,
+          runs: stat.runs,
+          hits: stat.hits,
+          doubles: stat.doubles,
+          triples: stat.triples,
+          home_runs: stat.home_runs,
+          rbi: stat.rbi,
+          walks: stat.walks,
+          strikeouts: stat.strikeouts,
+          stolen_bases: stat.stolen_bases,
+          caught_stealing: stat.caught_stealing,
+          hit_by_pitch: stat.hit_by_pitch,
+          sacrifice_flies: stat.sacrifice_flies,
+        };
+      }
+    });
+
+    // Cargar stats de pitcheo existentes
+    pitchingStats.forEach((stat) => {
+      if (stats[stat.player_id]) {
+        stats[stat.player_id].pitching = {
+          innings_pitched: stat.innings_pitched,
+          hits_allowed: stat.hits_allowed,
+          runs_allowed: stat.runs_allowed,
+          earned_runs: stat.earned_runs,
+          walks: stat.walks,
+          strikeouts: stat.strikeouts,
+          home_runs_allowed: stat.home_runs_allowed,
+          wild_pitches: stat.wild_pitches,
+          wins: stat.wins,
+          losses: stat.losses,
+          saves: stat.saves,
+        };
+        stats[stat.player_id].showPitching = true;
+      }
+    });
+
+    setPlayerStats(stats);
+  }, [game, homePlayers, awayPlayers, battingStats, pitchingStats]);
+
+  const handlePlayerStatsChange = (playerId: string, stats: PlayerStats) => {
+    setPlayerStats((prev) => ({ ...prev, [playerId]: stats }));
+  };
+
+  const isSaving = createBatting.isPending || updateBatting.isPending || 
+                   createPitching.isPending || updatePitching.isPending;
+
+  const handleSaveAllStats = async () => {
+    if (!game) return;
+
+    try {
+      const promises: Promise<unknown>[] = [];
+
+      // Procesar stats de cada jugador
+      [...homePlayers, ...awayPlayers].forEach((rp) => {
+        const stats = playerStats[rp.player.id];
+        if (!stats) return;
+
+        const teamId = homePlayers.includes(rp) ? game.home_team_id : game.away_team_id;
+
+        // Buscar si ya existe batting stats para este jugador
+        const existingBatting = battingStats.find((s) => s.player_id === rp.player.id);
+        
+        if (existingBatting) {
+          // Actualizar
+          promises.push(
+            updateBatting.mutateAsync({
+              id: existingBatting.id,
+              data: {
+                season_id: game.season_id,
+                game_id: gameId,
+                player_id: rp.player.id,
+                team_id: teamId,
+                at_bats: stats.batting.at_bats,
+                runs: stats.batting.runs,
+                hits: stats.batting.hits,
+                doubles: stats.batting.doubles,
+                triples: stats.batting.triples,
+                home_runs: stats.batting.home_runs,
+                rbi: stats.batting.rbi,
+                walks: stats.batting.walks,
+                strikeouts: stats.batting.strikeouts,
+                stolen_bases: stats.batting.stolen_bases,
+                caught_stealing: stats.batting.caught_stealing,
+                hit_by_pitch: stats.batting.hit_by_pitch,
+                sacrifice_flies: stats.batting.sacrifice_flies,
+              },
+            })
+          );
+        } else {
+          // Crear
+          const battingData: BattingStatsInsert = {
+            season_id: game.season_id,
+            game_id: gameId,
+            player_id: rp.player.id,
+            team_id: teamId,
+            at_bats: stats.batting.at_bats,
+            runs: stats.batting.runs,
+            hits: stats.batting.hits,
+            doubles: stats.batting.doubles,
+            triples: stats.batting.triples,
+            home_runs: stats.batting.home_runs,
+            rbi: stats.batting.rbi,
+            walks: stats.batting.walks,
+            strikeouts: stats.batting.strikeouts,
+            stolen_bases: stats.batting.stolen_bases,
+            caught_stealing: stats.batting.caught_stealing,
+            hit_by_pitch: stats.batting.hit_by_pitch,
+            sacrifice_flies: stats.batting.sacrifice_flies,
+          };
+          promises.push(createBatting.mutateAsync(battingData));
+        }
+
+        // Procesar pitching stats solo si showPitching está activo
+        if (stats.showPitching) {
+          const existingPitching = pitchingStats.find((s) => s.player_id === rp.player.id);
+          
+          if (existingPitching) {
+            promises.push(
+              updatePitching.mutateAsync({
+                id: existingPitching.id,
+                data: {
+                  season_id: game.season_id,
+                  game_id: gameId,
+                  player_id: rp.player.id,
+                  team_id: teamId,
+                  innings_pitched: stats.pitching.innings_pitched,
+                  hits_allowed: stats.pitching.hits_allowed,
+                  runs_allowed: stats.pitching.runs_allowed,
+                  earned_runs: stats.pitching.earned_runs,
+                  walks: stats.pitching.walks,
+                  strikeouts: stats.pitching.strikeouts,
+                  home_runs_allowed: stats.pitching.home_runs_allowed,
+                  wild_pitches: stats.pitching.wild_pitches,
+                  wins: stats.pitching.wins,
+                  losses: stats.pitching.losses,
+                  saves: stats.pitching.saves,
+                },
+              })
+            );
+          } else {
+            const pitchingData: PitchingStatsInsert = {
+              season_id: game.season_id,
+              game_id: gameId,
+              player_id: rp.player.id,
+              team_id: teamId,
+              innings_pitched: stats.pitching.innings_pitched,
+              hits_allowed: stats.pitching.hits_allowed,
+              runs_allowed: stats.pitching.runs_allowed,
+              earned_runs: stats.pitching.earned_runs,
+              walks: stats.pitching.walks,
+              strikeouts: stats.pitching.strikeouts,
+              home_runs_allowed: stats.pitching.home_runs_allowed,
+              wild_pitches: stats.pitching.wild_pitches,
+              wins: stats.pitching.wins,
+              losses: stats.pitching.losses,
+              saves: stats.pitching.saves,
+            };
+            promises.push(createPitching.mutateAsync(pitchingData));
+          }
+        }
+      });
+
+      await Promise.all(promises);
+      toast({ title: "Estadísticas guardadas", variant: "success" });
+    } catch (err) {
+      toast({
+        title: "Error",
+        description: getUserFriendlyMessage(handleError(err)),
+        variant: "destructive",
+      });
+    }
+  };
+
   if (gameLoading || homeLoading || awayLoading) return <LoadingState />;
 
   if (!game) {
@@ -539,19 +780,40 @@ function GameStatsEntryPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <PageHeader
-        icon={ClipboardCheck}
-        title="Captura de Estadísticas"
-        description={`${homeTeam?.name ?? "Local"} vs ${awayTeam?.name ?? "Visitante"}`}
-        actions={
-          <Button asChild variant="outline" size="sm">
-            <Link to="/admin/schedule">
-              <ArrowLeft className="mr-2 h-4 w-4" />
-              Calendario
-            </Link>
-          </Button>
+      <div className="sticky top-0 z-50 bg-background border-b border-border shadow-sm">
+        <PageHeader
+          icon={ClipboardCheck}
+          title="Captura de Estadísticas"
+          description={`${homeTeam?.name ?? "Local"} vs ${awayTeam?.name ?? "Visitante"}`}
+          actions={
+            <div className="flex gap-2">
+              <Button asChild variant="outline" size="sm">
+                <Link to="/admin/schedule">
+                  <ArrowLeft className="mr-2 h-4 w-4" />
+                  Calendario
+                </Link>
+              </Button>
+              <Button 
+                onClick={handleSaveAllStats} 
+                disabled={isSaving}
+                size="sm"
+              >
+              {isSaving ? (
+                <>
+                  <span className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                  Guardando...
+                </>
+              ) : (
+                <>
+                  <Save className="h-4 w-4" />
+                  Guardar todo
+                </>
+              )}
+            </Button>
+          </div>
         }
       />
+      </div>
 
       <GameScoreboard
         gameId={gameId}
@@ -588,6 +850,8 @@ function GameStatsEntryPage() {
           rosterPlayers={homePlayers}
           positions={positionMap}
           accordionValue={homeTeam?.id ?? "home"}
+          playerStats={playerStats}
+          onPlayerStatsChange={handlePlayerStatsChange}
         />
         <TeamSection
           teamName={awayTeam?.name ?? "Equipo Visitante"}
@@ -596,6 +860,8 @@ function GameStatsEntryPage() {
           rosterPlayers={awayPlayers}
           positions={positionMap}
           accordionValue={awayTeam?.id ?? "away"}
+          playerStats={playerStats}
+          onPlayerStatsChange={handlePlayerStatsChange}
         />
       </Accordion>
     </div>

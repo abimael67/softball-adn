@@ -8,3 +8,6 @@ export { useGames, useGame, useGamesByTeam, useGamesByStatus, useUpcomingGames, 
 export { useRostersBySeason, useRostersByTeam, useRostersByPlayer, useActiveRoster, useRosterHistory, useCreateRoster, useUpdateRoster, useDeactivateRoster } from "./use-rosters";
 export { useUserRoleRepository } from "./use-user-roles";
 export { usePermission, useCanManageTeams, useCanManagePlayers, useCanManageGames, useCanManageSeasons, useCanManageVenues, useCanManageRosters, useCanEditStatistics, useCanApproveGames, useCanPublishGames, useCanSubmitGames, useCanEnterStatistics, useCanUploadScoreSheets, useCanManageUsers, useCanViewAuditLog } from "./use-permissions";
+export { useBattingStatsByGame, useBattingStatsByPlayerAndSeason, useCreateBattingStats, useUpdateBattingStats } from "./use-batting-stats";
+export { usePitchingStatsByGame, usePitchingStatsByPlayerAndSeason, useCreatePitchingStats, useUpdatePitchingStats } from "./use-pitching-stats";
+export { useFieldingStatsByGame, useFieldingStatsByPlayerAndSeason, useCreateFieldingStats, useUpdateFieldingStats } from "./use-fielding-stats";
