@@ -5,6 +5,7 @@ import { useChurch } from "@/hooks/use-churches";
 import { useLatestSeason, usePlayerSeasonStats } from "@/hooks/use-public-data";
 import { storageService } from "@/services/storage-service";
 import { PlayerStatsTables } from "@/components/public/player-stats-tables";
+import { PlayerStatsHighlights } from "@/components/public/player-stats-highlights";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -120,7 +121,12 @@ function PlayerDetailsPage() {
           </CardContent>
         </Card>
       ) : (
-        stats && <PlayerStatsTables batting={stats.batting} pitching={stats.pitching} fielding={stats.fielding} />
+        stats && (
+          <>
+            <PlayerStatsHighlights batting={stats.batting} pitching={stats.pitching} />
+            <PlayerStatsTables batting={stats.batting} pitching={stats.pitching} fielding={stats.fielding} />
+          </>
+        )
       )}
     </div>
   );

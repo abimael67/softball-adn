@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowLeft, Clock, MapPin } from "lucide-react";
+import { ArrowLeft, MapPin, BarChart3 } from "lucide-react";
 import { 
   useGame, 
   useTeams, 
@@ -75,20 +75,20 @@ function GameDetailsPage() {
 
   const TeamLogo = ({ team, isWinner }: { team?: Team; isWinner?: boolean }) => {
     const winnerClasses = isWinner
-      ? "ring-4 ring-primary ring-offset-4 ring-offset-background shadow-lg shadow-primary/30"
-      : "ring-4 ring-primary/20 ring-offset-4 ring-offset-background";
+      ? "ring-4 ring-primary ring-offset-2 ring-offset-background shadow-lg shadow-primary/30"
+      : "ring-4 ring-primary/20 ring-offset-2 ring-offset-background";
 
     if (team?.logo_key) {
       return (
         <img
           src={storageService.getPublicUrl(team.logo_key)}
           alt={team.name}
-          className={`h-24 w-24 rounded-full object-cover ${winnerClasses}`}
+          className={`w-full h-full rounded-full object-cover ${winnerClasses}`}
         />
       );
     }
     return (
-      <div className={`flex h-24 w-24 items-center justify-center rounded-full bg-gradient-to-br from-primary/20 to-primary/5 text-2xl font-black text-primary ${winnerClasses}`}>
+      <div className={`flex w-full h-full items-center justify-center rounded-full bg-gradient-to-br from-primary/20 to-primary/5 text-xl sm:text-2xl font-black text-primary ${winnerClasses}`}>
         {team?.short_name || "?"}
       </div>
     );
@@ -176,45 +176,44 @@ function GameDetailsPage() {
 
       <Card className="schedule-card relative overflow-hidden border-2">
         <div className="relative z-10 flex flex-col">
-          <div className={`flex items-stretch ${completed ? "bg-gradient-to-br from-muted/40 via-background to-muted/20" : "bg-gradient-to-br from-primary/10 via-primary/5 to-background"}`}>
-            <div className="relative flex w-24 flex-col items-center justify-center border-r-2 border-primary/20 py-6">
+          <div className={`${completed ? "bg-gradient-to-br from-muted/40 via-background to-muted/20" : "bg-gradient-to-br from-primary/10 via-primary/5 to-background"}`}>
+            {/* Fecha arriba */}
+            <div className="relative flex items-center justify-center border-b-2 border-primary/20 py-3 px-4">
               <div className="absolute inset-0 bg-gradient-to-b from-primary/10 to-transparent opacity-50" />
-              <span className="relative text-xs font-bold uppercase tracking-wider text-primary/70">
+              <span className="relative text-sm font-bold uppercase tracking-wider text-primary/70">
                 {dateInfo.month}
               </span>
-              <span className="relative text-4xl font-black text-primary">{dateInfo.day}</span>
+              <span className="relative mx-2 text-2xl font-black text-primary">{dateInfo.day}</span>
+              <span className="relative text-sm font-semibold text-foreground/70">{dateInfo.time}</span>
             </div>
 
             <div className="flex flex-1 flex-col p-4">
-              <div className="mb-3 flex items-center justify-between text-xs text-foreground/70">
-                <div className="flex items-center gap-2">
-                  <Clock className="h-3.5 w-3.5" />
-                  <span className="font-semibold">{dateInfo.time}</span>
-                </div>
-                <div className="flex items-center gap-1.5">
-                  <MapPin className="h-3.5 w-3.5" />
-                  <span className="font-semibold">{venue?.name || "Por definir"}</span>
-                </div>
+              {/* Sede */}
+              <div className="mb-3 flex items-center justify-center gap-1.5 text-xs text-foreground/70">
+                <MapPin className="h-3.5 w-3.5" />
+                <span className="font-semibold">{venue?.name || "Por definir"}</span>
               </div>
 
-              <div className="flex flex-1 items-center justify-between gap-3 py-2">
-                <Link to="/teams/$teamId" params={{ teamId: game.home_team_id }} className="flex flex-1 flex-col items-center text-center gap-2 hover:opacity-80 transition-opacity">
-                  <TeamLogo team={homeTeam} isWinner={winner === "home"} />
-                  <div>
-                    <p className="text-base font-black text-foreground">{homeTeam?.name}</p>
+              <div className="flex flex-1 items-center justify-between gap-2 py-2">
+                <Link to="/teams/$teamId" params={{ teamId: game.home_team_id }} className="flex flex-1 flex-col items-center text-center gap-2 hover:opacity-80 transition-opacity min-w-0">
+                  <div className="w-full max-w-[100px] aspect-square">
+                    <TeamLogo team={homeTeam} isWinner={winner === "home"} />
+                  </div>
+                  <div className="min-w-0 w-full">
+                    <p className="text-sm sm:text-base font-black text-foreground truncate">{homeTeam?.name}</p>
                     <p className="text-xs text-muted-foreground">({getTeamRecord(game.home_team_id)})</p>
                   </div>
                 </Link>
 
-                <div className="flex flex-col items-center">
+                <div className="flex flex-col items-center flex-shrink-0">
                   {completed ? (
                     <>
-                      <div className="flex items-center gap-3 rounded-xl bg-gradient-to-br from-background to-muted/30 px-5 py-3 shadow-lg ring-2 ring-primary/10">
-                        <span className="text-3xl font-black text-foreground">
+                      <div className="flex items-center gap-2 sm:gap-3 rounded-xl bg-gradient-to-br from-background to-muted/30 px-3 sm:px-5 py-2 sm:py-3 shadow-lg ring-2 ring-primary/10">
+                        <span className="text-2xl sm:text-3xl font-black text-foreground">
                           {game.home_score ?? 0}
                         </span>
-                        <span className="text-xl font-bold text-muted-foreground">-</span>
-                        <span className="text-3xl font-black text-foreground">
+                        <span className="text-lg sm:text-xl font-bold text-muted-foreground">-</span>
+                        <span className="text-2xl sm:text-3xl font-black text-foreground">
                           {game.away_score ?? 0}
                         </span>
                       </div>
@@ -224,7 +223,7 @@ function GameDetailsPage() {
                     </>
                   ) : (
                     <div className="flex flex-col items-center">
-                      <span className="text-2xl font-black text-primary/40">vs</span>
+                      <span className="text-xl sm:text-2xl font-black text-primary/40">vs</span>
                       <Badge variant="outline" className="mt-1.5 rounded-full px-2.5 py-0.5 text-xs font-semibold">
                         Próximo
                       </Badge>
@@ -232,10 +231,12 @@ function GameDetailsPage() {
                   )}
                 </div>
 
-                <Link to="/teams/$teamId" params={{ teamId: game.away_team_id }} className="flex flex-1 flex-col items-center text-center gap-2 hover:opacity-80 transition-opacity">
-                  <TeamLogo team={awayTeam} isWinner={winner === "away"} />
-                  <div>
-                    <p className="text-base font-black text-foreground">{awayTeam?.name}</p>
+                <Link to="/teams/$teamId" params={{ teamId: game.away_team_id }} className="flex flex-1 flex-col items-center text-center gap-2 hover:opacity-80 transition-opacity min-w-0">
+                  <div className="w-full max-w-[100px] aspect-square">
+                    <TeamLogo team={awayTeam} isWinner={winner === "away"} />
+                  </div>
+                  <div className="min-w-0 w-full">
+                    <p className="text-sm sm:text-base font-black text-foreground truncate">{awayTeam?.name}</p>
                     <p className="text-xs text-muted-foreground">({getTeamRecord(game.away_team_id)})</p>
                   </div>
                 </Link>
@@ -246,6 +247,51 @@ function GameDetailsPage() {
       </Card>
 
       {completed && (
+        <>
+        <Card className="border-2">
+          <div className="p-5">
+            <div className="flex items-center gap-2 mb-4">
+              <BarChart3 className="h-5 w-5 text-primary" />
+              <h2 className="text-lg font-bold text-foreground">Resumen del Partido</h2>
+            </div>
+            {(() => {
+              const homeHits = battingStats.filter((s) => s.team_id === game.home_team_id).reduce((a, s) => a + s.hits, 0);
+              const homeHr = battingStats.filter((s) => s.team_id === game.home_team_id).reduce((a, s) => a + s.home_runs, 0);
+              const awayHits = battingStats.filter((s) => s.team_id === game.away_team_id).reduce((a, s) => a + s.hits, 0);
+              const awayHr = battingStats.filter((s) => s.team_id === game.away_team_id).reduce((a, s) => a + s.home_runs, 0);
+
+              const TeamSummaryCard = ({ name, hits, hr, errors }: { name: string; hits: number; hr: number; errors: number }) => (
+                <Card>
+                  <div className="p-4 space-y-3">
+                    <h3 className="font-bold text-foreground text-center">{name}</h3>
+                    <div className="grid grid-cols-3 gap-2 text-center">
+                      <div>
+                        <p className="text-2xl font-black text-foreground">{hits}</p>
+                        <p className="text-xs text-muted-foreground uppercase">Hits</p>
+                      </div>
+                      <div>
+                        <p className="text-2xl font-black text-foreground">{hr}</p>
+                        <p className="text-xs text-muted-foreground uppercase">HR</p>
+                      </div>
+                      <div>
+                        <p className="text-2xl font-black text-foreground">{errors}</p>
+                        <p className="text-xs text-muted-foreground uppercase">Errores</p>
+                      </div>
+                    </div>
+                  </div>
+                </Card>
+              );
+
+              return (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <TeamSummaryCard name={homeTeam?.name ?? "Local"} hits={homeHits} hr={homeHr} errors={game.home_errors ?? 0} />
+                  <TeamSummaryCard name={awayTeam?.name ?? "Visitante"} hits={awayHits} hr={awayHr} errors={game.away_errors ?? 0} />
+                </div>
+              );
+            })()}
+          </div>
+        </Card>
+
         <Card className="border-2">
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
             <TabsList className="w-full justify-start border-b rounded-none bg-transparent h-auto p-0">
@@ -292,25 +338,59 @@ function GameDetailsPage() {
                               </TableRow>
                             </TableHeader>
                             <TableBody>
-                              {stats.batting.map((stat) => (
-                                <TableRow key={stat.id}>
-                                  <TableCell className="sticky left-0 bg-background font-medium">
-                                    <Link to="/players/$playerId" params={{ playerId: stat.player_id }} className="hover:text-primary transition-colors">
-                                      {getPlayerName(stat.player_id)}
-                                    </Link>
-                                  </TableCell>
-                                  <TableCell className="text-center">{stat.at_bats}</TableCell>
-                                  <TableCell className="text-center">{stat.runs}</TableCell>
-                                  <TableCell className="text-center">{stat.hits}</TableCell>
-                                  <TableCell className="text-center">{stat.doubles}</TableCell>
-                                  <TableCell className="text-center">{stat.triples}</TableCell>
-                                  <TableCell className="text-center">{stat.home_runs}</TableCell>
-                                  <TableCell className="text-center">{stat.rbi}</TableCell>
-                                  <TableCell className="text-center">{stat.walks}</TableCell>
-                                  <TableCell className="text-center">{stat.strikeouts}</TableCell>
-                                  <TableCell className="text-center">{stat.stolen_bases}</TableCell>
-                                </TableRow>
-                              ))}
+                              {(() => {
+                                const totalBatting = stats.batting.reduce(
+                                  (acc, s) => ({
+                                    at_bats: acc.at_bats + s.at_bats,
+                                    runs: acc.runs + s.runs,
+                                    hits: acc.hits + s.hits,
+                                    doubles: acc.doubles + s.doubles,
+                                    triples: acc.triples + s.triples,
+                                    home_runs: acc.home_runs + s.home_runs,
+                                    rbi: acc.rbi + s.rbi,
+                                    walks: acc.walks + s.walks,
+                                    strikeouts: acc.strikeouts + s.strikeouts,
+                                    stolen_bases: acc.stolen_bases + s.stolen_bases,
+                                  }),
+                                  { at_bats: 0, runs: 0, hits: 0, doubles: 0, triples: 0, home_runs: 0, rbi: 0, walks: 0, strikeouts: 0, stolen_bases: 0 },
+                                );
+                                return (
+                                  <>
+                                    {stats.batting.map((stat) => (
+                                      <TableRow key={stat.id}>
+                                        <TableCell className="sticky left-0 bg-background font-medium">
+                                          <Link to="/players/$playerId" params={{ playerId: stat.player_id }} className="hover:text-primary transition-colors">
+                                            {getPlayerName(stat.player_id)}
+                                          </Link>
+                                        </TableCell>
+                                        <TableCell className="text-center">{stat.at_bats}</TableCell>
+                                        <TableCell className="text-center">{stat.runs}</TableCell>
+                                        <TableCell className="text-center">{stat.hits}</TableCell>
+                                        <TableCell className="text-center">{stat.doubles}</TableCell>
+                                        <TableCell className="text-center">{stat.triples}</TableCell>
+                                        <TableCell className="text-center">{stat.home_runs}</TableCell>
+                                        <TableCell className="text-center">{stat.rbi}</TableCell>
+                                        <TableCell className="text-center">{stat.walks}</TableCell>
+                                        <TableCell className="text-center">{stat.strikeouts}</TableCell>
+                                        <TableCell className="text-center">{stat.stolen_bases}</TableCell>
+                                      </TableRow>
+                                    ))}
+                                    <TableRow className="border-t-2 border-primary/30 font-semibold bg-muted/50">
+                                      <TableCell className="sticky left-0 bg-muted/50 text-foreground">Totales</TableCell>
+                                      <TableCell className="text-center text-foreground">{totalBatting.at_bats}</TableCell>
+                                      <TableCell className="text-center text-foreground">{totalBatting.runs}</TableCell>
+                                      <TableCell className="text-center text-foreground">{totalBatting.hits}</TableCell>
+                                      <TableCell className="text-center text-foreground">{totalBatting.doubles}</TableCell>
+                                      <TableCell className="text-center text-foreground">{totalBatting.triples}</TableCell>
+                                      <TableCell className="text-center text-foreground">{totalBatting.home_runs}</TableCell>
+                                      <TableCell className="text-center text-foreground">{totalBatting.rbi}</TableCell>
+                                      <TableCell className="text-center text-foreground">{totalBatting.walks}</TableCell>
+                                      <TableCell className="text-center text-foreground">{totalBatting.strikeouts}</TableCell>
+                                      <TableCell className="text-center text-foreground">{totalBatting.stolen_bases}</TableCell>
+                                    </TableRow>
+                                  </>
+                                );
+                              })()}
                             </TableBody>
                           </Table>
                         </div>
@@ -339,26 +419,62 @@ function GameDetailsPage() {
                               </TableRow>
                             </TableHeader>
                             <TableBody>
-                              {stats.pitching.map((stat) => (
-                                <TableRow key={stat.id}>
-                                  <TableCell className="sticky left-0 bg-background font-medium">
-                                    <Link to="/players/$playerId" params={{ playerId: stat.player_id }} className="hover:text-primary transition-colors">
-                                      {getPlayerName(stat.player_id)}
-                                    </Link>
-                                  </TableCell>
-                                  <TableCell className="text-center">{stat.innings_pitched}</TableCell>
-                                  <TableCell className="text-center">{stat.hits_allowed}</TableCell>
-                                  <TableCell className="text-center">{stat.runs_allowed}</TableCell>
-                                  <TableCell className="text-center">{stat.earned_runs}</TableCell>
-                                  <TableCell className="text-center">{stat.walks}</TableCell>
-                                  <TableCell className="text-center">{stat.strikeouts}</TableCell>
-                                  <TableCell className="text-center">{stat.home_runs_allowed}</TableCell>
-                                  <TableCell className="text-center">{stat.wild_pitches}</TableCell>
-                                  <TableCell className="text-center">{stat.wins}</TableCell>
-                                  <TableCell className="text-center">{stat.losses}</TableCell>
-                                  <TableCell className="text-center">{stat.saves}</TableCell>
-                                </TableRow>
-                              ))}
+                              {(() => {
+                                const totalPitching = stats.pitching.reduce(
+                                  (acc, s) => ({
+                                    innings_pitched: acc.innings_pitched + Number(s.innings_pitched),
+                                    hits_allowed: acc.hits_allowed + s.hits_allowed,
+                                    runs_allowed: acc.runs_allowed + s.runs_allowed,
+                                    earned_runs: acc.earned_runs + s.earned_runs,
+                                    walks: acc.walks + s.walks,
+                                    strikeouts: acc.strikeouts + s.strikeouts,
+                                    home_runs_allowed: acc.home_runs_allowed + s.home_runs_allowed,
+                                    wild_pitches: acc.wild_pitches + s.wild_pitches,
+                                    wins: acc.wins + s.wins,
+                                    losses: acc.losses + s.losses,
+                                    saves: acc.saves + s.saves,
+                                  }),
+                                  { innings_pitched: 0, hits_allowed: 0, runs_allowed: 0, earned_runs: 0, walks: 0, strikeouts: 0, home_runs_allowed: 0, wild_pitches: 0, wins: 0, losses: 0, saves: 0 },
+                                );
+                                return (
+                                  <>
+                                    {stats.pitching.map((stat) => (
+                                      <TableRow key={stat.id}>
+                                        <TableCell className="sticky left-0 bg-background font-medium">
+                                          <Link to="/players/$playerId" params={{ playerId: stat.player_id }} className="hover:text-primary transition-colors">
+                                            {getPlayerName(stat.player_id)}
+                                          </Link>
+                                        </TableCell>
+                                        <TableCell className="text-center">{stat.innings_pitched}</TableCell>
+                                        <TableCell className="text-center">{stat.hits_allowed}</TableCell>
+                                        <TableCell className="text-center">{stat.runs_allowed}</TableCell>
+                                        <TableCell className="text-center">{stat.earned_runs}</TableCell>
+                                        <TableCell className="text-center">{stat.walks}</TableCell>
+                                        <TableCell className="text-center">{stat.strikeouts}</TableCell>
+                                        <TableCell className="text-center">{stat.home_runs_allowed}</TableCell>
+                                        <TableCell className="text-center">{stat.wild_pitches}</TableCell>
+                                        <TableCell className="text-center">{stat.wins}</TableCell>
+                                        <TableCell className="text-center">{stat.losses}</TableCell>
+                                        <TableCell className="text-center">{stat.saves}</TableCell>
+                                      </TableRow>
+                                    ))}
+                                    <TableRow className="border-t-2 border-primary/30 font-semibold bg-muted/50">
+                                      <TableCell className="sticky left-0 bg-muted/50 text-foreground">Totales</TableCell>
+                                      <TableCell className="text-center text-foreground">{totalPitching.innings_pitched}</TableCell>
+                                      <TableCell className="text-center text-foreground">{totalPitching.hits_allowed}</TableCell>
+                                      <TableCell className="text-center text-foreground">{totalPitching.runs_allowed}</TableCell>
+                                      <TableCell className="text-center text-foreground">{totalPitching.earned_runs}</TableCell>
+                                      <TableCell className="text-center text-foreground">{totalPitching.walks}</TableCell>
+                                      <TableCell className="text-center text-foreground">{totalPitching.strikeouts}</TableCell>
+                                      <TableCell className="text-center text-foreground">{totalPitching.home_runs_allowed}</TableCell>
+                                      <TableCell className="text-center text-foreground">{totalPitching.wild_pitches}</TableCell>
+                                      <TableCell className="text-center text-foreground">{totalPitching.wins}</TableCell>
+                                      <TableCell className="text-center text-foreground">{totalPitching.losses}</TableCell>
+                                      <TableCell className="text-center text-foreground">{totalPitching.saves}</TableCell>
+                                    </TableRow>
+                                  </>
+                                );
+                              })()}
                             </TableBody>
                           </Table>
                         </div>
@@ -398,25 +514,59 @@ function GameDetailsPage() {
                               </TableRow>
                             </TableHeader>
                             <TableBody>
-                              {stats.batting.map((stat) => (
-                                <TableRow key={stat.id}>
-                                  <TableCell className="sticky left-0 bg-background font-medium">
-                                    <Link to="/players/$playerId" params={{ playerId: stat.player_id }} className="hover:text-primary transition-colors">
-                                      {getPlayerName(stat.player_id)}
-                                    </Link>
-                                  </TableCell>
-                                  <TableCell className="text-center">{stat.at_bats}</TableCell>
-                                  <TableCell className="text-center">{stat.runs}</TableCell>
-                                  <TableCell className="text-center">{stat.hits}</TableCell>
-                                  <TableCell className="text-center">{stat.doubles}</TableCell>
-                                  <TableCell className="text-center">{stat.triples}</TableCell>
-                                  <TableCell className="text-center">{stat.home_runs}</TableCell>
-                                  <TableCell className="text-center">{stat.rbi}</TableCell>
-                                  <TableCell className="text-center">{stat.walks}</TableCell>
-                                  <TableCell className="text-center">{stat.strikeouts}</TableCell>
-                                  <TableCell className="text-center">{stat.stolen_bases}</TableCell>
-                                </TableRow>
-                              ))}
+                              {(() => {
+                                const totalBatting = stats.batting.reduce(
+                                  (acc, s) => ({
+                                    at_bats: acc.at_bats + s.at_bats,
+                                    runs: acc.runs + s.runs,
+                                    hits: acc.hits + s.hits,
+                                    doubles: acc.doubles + s.doubles,
+                                    triples: acc.triples + s.triples,
+                                    home_runs: acc.home_runs + s.home_runs,
+                                    rbi: acc.rbi + s.rbi,
+                                    walks: acc.walks + s.walks,
+                                    strikeouts: acc.strikeouts + s.strikeouts,
+                                    stolen_bases: acc.stolen_bases + s.stolen_bases,
+                                  }),
+                                  { at_bats: 0, runs: 0, hits: 0, doubles: 0, triples: 0, home_runs: 0, rbi: 0, walks: 0, strikeouts: 0, stolen_bases: 0 },
+                                );
+                                return (
+                                  <>
+                                    {stats.batting.map((stat) => (
+                                      <TableRow key={stat.id}>
+                                        <TableCell className="sticky left-0 bg-background font-medium">
+                                          <Link to="/players/$playerId" params={{ playerId: stat.player_id }} className="hover:text-primary transition-colors">
+                                            {getPlayerName(stat.player_id)}
+                                          </Link>
+                                        </TableCell>
+                                        <TableCell className="text-center">{stat.at_bats}</TableCell>
+                                        <TableCell className="text-center">{stat.runs}</TableCell>
+                                        <TableCell className="text-center">{stat.hits}</TableCell>
+                                        <TableCell className="text-center">{stat.doubles}</TableCell>
+                                        <TableCell className="text-center">{stat.triples}</TableCell>
+                                        <TableCell className="text-center">{stat.home_runs}</TableCell>
+                                        <TableCell className="text-center">{stat.rbi}</TableCell>
+                                        <TableCell className="text-center">{stat.walks}</TableCell>
+                                        <TableCell className="text-center">{stat.strikeouts}</TableCell>
+                                        <TableCell className="text-center">{stat.stolen_bases}</TableCell>
+                                      </TableRow>
+                                    ))}
+                                    <TableRow className="border-t-2 border-primary/30 font-semibold bg-muted/50">
+                                      <TableCell className="sticky left-0 bg-muted/50 text-foreground">Totales</TableCell>
+                                      <TableCell className="text-center text-foreground">{totalBatting.at_bats}</TableCell>
+                                      <TableCell className="text-center text-foreground">{totalBatting.runs}</TableCell>
+                                      <TableCell className="text-center text-foreground">{totalBatting.hits}</TableCell>
+                                      <TableCell className="text-center text-foreground">{totalBatting.doubles}</TableCell>
+                                      <TableCell className="text-center text-foreground">{totalBatting.triples}</TableCell>
+                                      <TableCell className="text-center text-foreground">{totalBatting.home_runs}</TableCell>
+                                      <TableCell className="text-center text-foreground">{totalBatting.rbi}</TableCell>
+                                      <TableCell className="text-center text-foreground">{totalBatting.walks}</TableCell>
+                                      <TableCell className="text-center text-foreground">{totalBatting.strikeouts}</TableCell>
+                                      <TableCell className="text-center text-foreground">{totalBatting.stolen_bases}</TableCell>
+                                    </TableRow>
+                                  </>
+                                );
+                              })()}
                             </TableBody>
                           </Table>
                         </div>
@@ -445,26 +595,62 @@ function GameDetailsPage() {
                               </TableRow>
                             </TableHeader>
                             <TableBody>
-                              {stats.pitching.map((stat) => (
-                                <TableRow key={stat.id}>
-                                  <TableCell className="sticky left-0 bg-background font-medium">
-                                    <Link to="/players/$playerId" params={{ playerId: stat.player_id }} className="hover:text-primary transition-colors">
-                                      {getPlayerName(stat.player_id)}
-                                    </Link>
-                                  </TableCell>
-                                  <TableCell className="text-center">{stat.innings_pitched}</TableCell>
-                                  <TableCell className="text-center">{stat.hits_allowed}</TableCell>
-                                  <TableCell className="text-center">{stat.runs_allowed}</TableCell>
-                                  <TableCell className="text-center">{stat.earned_runs}</TableCell>
-                                  <TableCell className="text-center">{stat.walks}</TableCell>
-                                  <TableCell className="text-center">{stat.strikeouts}</TableCell>
-                                  <TableCell className="text-center">{stat.home_runs_allowed}</TableCell>
-                                  <TableCell className="text-center">{stat.wild_pitches}</TableCell>
-                                  <TableCell className="text-center">{stat.wins}</TableCell>
-                                  <TableCell className="text-center">{stat.losses}</TableCell>
-                                  <TableCell className="text-center">{stat.saves}</TableCell>
-                                </TableRow>
-                              ))}
+                              {(() => {
+                                const totalPitching = stats.pitching.reduce(
+                                  (acc, s) => ({
+                                    innings_pitched: acc.innings_pitched + Number(s.innings_pitched),
+                                    hits_allowed: acc.hits_allowed + s.hits_allowed,
+                                    runs_allowed: acc.runs_allowed + s.runs_allowed,
+                                    earned_runs: acc.earned_runs + s.earned_runs,
+                                    walks: acc.walks + s.walks,
+                                    strikeouts: acc.strikeouts + s.strikeouts,
+                                    home_runs_allowed: acc.home_runs_allowed + s.home_runs_allowed,
+                                    wild_pitches: acc.wild_pitches + s.wild_pitches,
+                                    wins: acc.wins + s.wins,
+                                    losses: acc.losses + s.losses,
+                                    saves: acc.saves + s.saves,
+                                  }),
+                                  { innings_pitched: 0, hits_allowed: 0, runs_allowed: 0, earned_runs: 0, walks: 0, strikeouts: 0, home_runs_allowed: 0, wild_pitches: 0, wins: 0, losses: 0, saves: 0 },
+                                );
+                                return (
+                                  <>
+                                    {stats.pitching.map((stat) => (
+                                      <TableRow key={stat.id}>
+                                        <TableCell className="sticky left-0 bg-background font-medium">
+                                          <Link to="/players/$playerId" params={{ playerId: stat.player_id }} className="hover:text-primary transition-colors">
+                                            {getPlayerName(stat.player_id)}
+                                          </Link>
+                                        </TableCell>
+                                        <TableCell className="text-center">{stat.innings_pitched}</TableCell>
+                                        <TableCell className="text-center">{stat.hits_allowed}</TableCell>
+                                        <TableCell className="text-center">{stat.runs_allowed}</TableCell>
+                                        <TableCell className="text-center">{stat.earned_runs}</TableCell>
+                                        <TableCell className="text-center">{stat.walks}</TableCell>
+                                        <TableCell className="text-center">{stat.strikeouts}</TableCell>
+                                        <TableCell className="text-center">{stat.home_runs_allowed}</TableCell>
+                                        <TableCell className="text-center">{stat.wild_pitches}</TableCell>
+                                        <TableCell className="text-center">{stat.wins}</TableCell>
+                                        <TableCell className="text-center">{stat.losses}</TableCell>
+                                        <TableCell className="text-center">{stat.saves}</TableCell>
+                                      </TableRow>
+                                    ))}
+                                    <TableRow className="border-t-2 border-primary/30 font-semibold bg-muted/50">
+                                      <TableCell className="sticky left-0 bg-muted/50 text-foreground">Totales</TableCell>
+                                      <TableCell className="text-center text-foreground">{totalPitching.innings_pitched}</TableCell>
+                                      <TableCell className="text-center text-foreground">{totalPitching.hits_allowed}</TableCell>
+                                      <TableCell className="text-center text-foreground">{totalPitching.runs_allowed}</TableCell>
+                                      <TableCell className="text-center text-foreground">{totalPitching.earned_runs}</TableCell>
+                                      <TableCell className="text-center text-foreground">{totalPitching.walks}</TableCell>
+                                      <TableCell className="text-center text-foreground">{totalPitching.strikeouts}</TableCell>
+                                      <TableCell className="text-center text-foreground">{totalPitching.home_runs_allowed}</TableCell>
+                                      <TableCell className="text-center text-foreground">{totalPitching.wild_pitches}</TableCell>
+                                      <TableCell className="text-center text-foreground">{totalPitching.wins}</TableCell>
+                                      <TableCell className="text-center text-foreground">{totalPitching.losses}</TableCell>
+                                      <TableCell className="text-center text-foreground">{totalPitching.saves}</TableCell>
+                                    </TableRow>
+                                  </>
+                                );
+                              })()}
                             </TableBody>
                           </Table>
                         </div>
@@ -476,7 +662,7 @@ function GameDetailsPage() {
             </TabsContent>
           </Tabs>
         </Card>
-      )}
+      </>)}
     </div>
   );
 }

@@ -1,12 +1,12 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowLeft, ClipboardCheck, Target, Activity, Save } from "lucide-react";
-import { 
-  useGame, 
-  useRostersByTeam, 
-  usePlayers, 
-  useTeams, 
-  usePositions, 
+import { ArrowLeft, ClipboardCheck, Target, Activity, Save, Search } from "lucide-react";
+import {
+  useGame,
+  useRostersByTeam,
+  usePlayers,
+  useTeams,
+  usePositions,
   useUpdateGame,
   useBattingStatsByGame,
   usePitchingStatsByGame,
@@ -21,12 +21,24 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { PageHeader, LoadingState } from "@/components/admin/admin-shared";
 import { storageService } from "@/services/storage-service";
 import { handleError, getUserFriendlyMessage } from "@/lib/errors";
 import { toast } from "@/components/ui/toast";
-import type { Player, SeasonRoster, GameUpdate, BattingStatsInsert, PitchingStatsInsert } from "@/types/database";
+import type {
+  Player,
+  SeasonRoster,
+  GameUpdate,
+  BattingStatsInsert,
+  PitchingStatsInsert,
+} from "@/types/database";
 
 export const Route = createFileRoute("/admin/game-reports/$gameId")({
   component: GameStatsEntryPage,
@@ -59,13 +71,13 @@ function GroupSection({
   return (
     <div className="space-y-3">
       <div className="flex items-center gap-2">
-        <Icon className="h-4 w-4 text-primary" />
-        <h4 className="text-sm font-semibold text-foreground">{title}</h4>
+        <Icon className="text-primary h-4 w-4" />
+        <h4 className="text-foreground text-sm font-semibold">{title}</h4>
       </div>
       <div className="grid grid-cols-3 gap-3 sm:grid-cols-4 lg:grid-cols-5">
         {fields.map((field) => (
           <div key={field.key} className="space-y-1">
-            <label className="flex items-baseline gap-1 text-xs text-muted-foreground">
+            <label className="text-muted-foreground flex items-baseline gap-1 text-xs">
               <span className="font-semibold">{field.abbr}</span>
               <span className="hidden sm:inline">{field.label}</span>
             </label>
@@ -122,18 +134,21 @@ function PlayerAccordion({
   };
 
   return (
-    <AccordionItem value={player.id} className="border rounded-lg px-4 mb-3 data-[state=open]:border-primary/30">
+    <AccordionItem
+      value={player.id}
+      className="data-[state=open]:border-primary/30 mb-3 rounded-lg border px-4"
+    >
       <AccordionTrigger className="text-left hover:no-underline">
         <div className="flex items-center gap-3">
           {roster.jersey_number != null && (
-            <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-sm font-bold text-primary">
+            <span className="bg-primary/10 text-primary inline-flex h-8 w-8 items-center justify-center rounded-full text-sm font-bold">
               {roster.jersey_number}
             </span>
           )}
           <div>
-            <span className="font-medium text-foreground">{displayName}</span>
+            <span className="text-foreground font-medium">{displayName}</span>
             {player.nickname && (
-              <span className="ml-2 text-xs text-muted-foreground">"{player.nickname}"</span>
+              <span className="text-muted-foreground ml-2 text-xs">"{player.nickname}"</span>
             )}
             {position && (
               <Badge variant="outline" className="ml-2 text-xs font-normal">
@@ -171,8 +186,11 @@ function PlayerAccordion({
 
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <Activity className="h-4 w-4 text-primary" />
-              <label htmlFor={`pitching-${player.id}`} className="text-sm font-semibold text-foreground cursor-pointer">
+              <Activity className="text-primary h-4 w-4" />
+              <label
+                htmlFor={`pitching-${player.id}`}
+                className="text-foreground cursor-pointer text-sm font-semibold"
+              >
                 Registrar estadísticas de pitcheo
               </label>
             </div>
@@ -221,143 +239,123 @@ function TeamLogo({ logoKey, shortName }: { logoKey: string | null; shortName: s
     );
   }
   return (
-    <span className="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10 text-sm font-black text-primary">
+    <span className="bg-primary/10 text-primary inline-flex h-9 w-9 items-center justify-center rounded-lg text-sm font-black">
       {shortName}
     </span>
   );
 }
 
 function TeamSection({
-  teamName,
-  teamShortName,
-  teamLogoKey,
   rosterPlayers,
   positions,
-  accordionValue,
   playerStats,
   onPlayerStatsChange,
 }: {
-  teamName: string;
-  teamShortName: string;
-  teamLogoKey: string | null;
   rosterPlayers: RosterPlayer[];
   positions: Map<string, string>;
-  accordionValue: string;
   playerStats: Record<string, PlayerStats>;
   onPlayerStatsChange: (playerId: string, stats: PlayerStats) => void;
 }) {
   return (
-    <AccordionItem value={accordionValue} className="border rounded-lg data-[state=open]:border-primary/30">
-      <AccordionTrigger className="px-5 hover:no-underline">
-        <div className="flex items-center gap-3">
-          <TeamLogo logoKey={teamLogoKey} shortName={teamShortName} />
-          <span className="text-lg font-semibold text-foreground">{teamName}</span>
-          <Badge variant="secondary" className="ml-2 text-xs">
-            {rosterPlayers.length} jugador(es)
-          </Badge>
-        </div>
-      </AccordionTrigger>
-      <AccordionContent>
-        <div className="px-5">
-          {rosterPlayers.length === 0 ? (
-            <p className="text-sm text-muted-foreground py-4 text-center">
-              Sin jugadores inscritos en este equipo
-            </p>
-          ) : (
-            <Accordion type="multiple" className="w-full">
-              {rosterPlayers.map((rp) => (
-                <PlayerAccordion
-                  key={rp.player.id}
-                  rosterPlayer={rp}
-                  position={positions.get(rp.player.primary_position_id ?? "")}
-                  stats={playerStats[rp.player.id] || {
-                    batting: {
-                      at_bats: 0, runs: 0, hits: 0, doubles: 0, triples: 0,
-                      home_runs: 0, rbi: 0, walks: 0, strikeouts: 0,
-                      stolen_bases: 0, caught_stealing: 0, hit_by_pitch: 0, sacrifice_flies: 0,
-                    },
-                    pitching: {
-                      innings_pitched: 0, hits_allowed: 0, runs_allowed: 0, earned_runs: 0,
-                      walks: 0, strikeouts: 0, home_runs_allowed: 0, wild_pitches: 0,
-                      wins: 0, losses: 0, saves: 0,
-                    },
-                    showPitching: false,
-                  }}
-                  onStatsChange={(stats) => onPlayerStatsChange(rp.player.id, stats)}
-                />
-              ))}
-            </Accordion>
-          )}
-        </div>
-      </AccordionContent>
-    </AccordionItem>
+    <div>
+      {rosterPlayers.length === 0 ? (
+        <p className="text-muted-foreground py-4 text-center text-sm">
+          Sin jugadores inscritos en este equipo
+        </p>
+      ) : (
+        <Accordion type="multiple" className="w-full">
+          {rosterPlayers.map((rp) => (
+            <PlayerAccordion
+              key={rp.player.id}
+              rosterPlayer={rp}
+              position={positions.get(rp.player.primary_position_id ?? "")}
+              stats={
+                playerStats[rp.player.id] || {
+                  batting: {
+                    at_bats: 0,
+                    runs: 0,
+                    hits: 0,
+                    doubles: 0,
+                    triples: 0,
+                    home_runs: 0,
+                    rbi: 0,
+                    walks: 0,
+                    strikeouts: 0,
+                    stolen_bases: 0,
+                    caught_stealing: 0,
+                    hit_by_pitch: 0,
+                    sacrifice_flies: 0,
+                  },
+                  pitching: {
+                    innings_pitched: 0,
+                    hits_allowed: 0,
+                    runs_allowed: 0,
+                    earned_runs: 0,
+                    walks: 0,
+                    strikeouts: 0,
+                    home_runs_allowed: 0,
+                    wild_pitches: 0,
+                    wins: 0,
+                    losses: 0,
+                    saves: 0,
+                  },
+                  showPitching: false,
+                }
+              }
+              onStatsChange={(stats) => onPlayerStatsChange(rp.player.id, stats)}
+            />
+          ))}
+        </Accordion>
+      )}
+    </div>
   );
 }
 
 function GameScoreboard({
-  gameId,
-  gameStatus,
   homeTeam,
   awayTeam,
-  initialScore,
+  homeScore,
+  awayScore,
+  homeHits,
+  awayHits,
+  homeErrors,
+  awayErrors,
+  onScoreChange,
+  onSave,
+  isSaving,
+  computedHomeRuns,
+  computedHomeHits,
+  computedAwayRuns,
+  computedAwayHits,
 }: {
-  gameId: string;
-  gameStatus: string;
-  homeTeam: { name: string; shortName: string; logoKey: string | null; primaryColor: string | null; secondaryColor: string | null };
-  awayTeam: { name: string; shortName: string; logoKey: string | null; primaryColor: string | null; secondaryColor: string | null };
-  initialScore: {
-    home_score: number | null;
-    away_score: number | null;
-    home_hits: number | null;
-    away_hits: number | null;
-    home_errors: number | null;
-    away_errors: number | null;
+  homeTeam: {
+    name: string;
+    shortName: string;
+    logoKey: string | null;
+    primaryColor: string | null;
+    secondaryColor: string | null;
   };
+  awayTeam: {
+    name: string;
+    shortName: string;
+    logoKey: string | null;
+    primaryColor: string | null;
+    secondaryColor: string | null;
+  };
+  homeScore: number;
+  awayScore: number;
+  homeHits: number;
+  awayHits: number;
+  homeErrors: number;
+  awayErrors: number;
+  onScoreChange: (field: string, value: number) => void;
+  onSave: () => void;
+  isSaving: boolean;
+  computedHomeRuns: number;
+  computedHomeHits: number;
+  computedAwayRuns: number;
+  computedAwayHits: number;
 }) {
-  const [homeScore, setHomeScore] = useState(initialScore.home_score ?? 0);
-  const [awayScore, setAwayScore] = useState(initialScore.away_score ?? 0);
-  const [homeHits, setHomeHits] = useState(initialScore.home_hits ?? 0);
-  const [awayHits, setAwayHits] = useState(initialScore.away_hits ?? 0);
-  const [homeErrors, setHomeErrors] = useState(initialScore.home_errors ?? 0);
-  const [awayErrors, setAwayErrors] = useState(initialScore.away_errors ?? 0);
-
-  useEffect(() => {
-    setHomeScore(initialScore.home_score ?? 0);
-    setAwayScore(initialScore.away_score ?? 0);
-    setHomeHits(initialScore.home_hits ?? 0);
-    setAwayHits(initialScore.away_hits ?? 0);
-    setHomeErrors(initialScore.home_errors ?? 0);
-    setAwayErrors(initialScore.away_errors ?? 0);
-  }, [initialScore]);
-
-  const updateGame = useUpdateGame();
-
-  const handleSave = async () => {
-    try {
-      const data: GameUpdate = {
-        home_score: homeScore,
-        away_score: awayScore,
-        home_hits: homeHits,
-        away_hits: awayHits,
-        home_errors: homeErrors,
-        away_errors: awayErrors,
-      };
-
-      if (gameStatus === "scheduled" || gameStatus === "in_progress") {
-        data.status = "statistics_entry";
-      }
-
-      await updateGame.mutateAsync({ id: gameId, data });
-      toast({ title: "Marcador guardado", variant: "success" });
-    } catch (err) {
-      toast({
-        title: "Error",
-        description: getUserFriendlyMessage(handleError(err)),
-        variant: "destructive",
-      });
-    }
-  };
-
   const homeStyle = homeTeam.primaryColor ? { borderColor: homeTeam.primaryColor } : undefined;
   const awayStyle = awayTeam.primaryColor ? { borderColor: awayTeam.primaryColor } : undefined;
 
@@ -366,15 +364,11 @@ function GameScoreboard({
       <CardHeader className="pb-4">
         <div className="flex items-center justify-between">
           <CardTitle className="flex items-center gap-2 text-lg">
-            <ClipboardCheck className="h-5 w-5 text-primary" />
+            <ClipboardCheck className="text-primary h-5 w-5" />
             Resultado del Partido
           </CardTitle>
-          <Button
-            onClick={handleSave}
-            disabled={updateGame.isPending}
-            size="sm"
-          >
-            {updateGame.isPending ? (
+          <Button onClick={onSave} disabled={isSaving} size="sm">
+            {isSaving ? (
               <>
                 <span className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
                 Guardando...
@@ -390,110 +384,132 @@ function GameScoreboard({
       </CardHeader>
       <CardContent>
         <div className="grid gap-6 md:grid-cols-2">
-          <div className="space-y-4" style={homeStyle}>
-            <div className="flex items-center gap-3">
-              <TeamLogo logoKey={homeTeam.logoKey} shortName={homeTeam.shortName} />
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Local</p>
-                <p className="text-base font-bold text-foreground">{homeTeam.name}</p>
+            <div className="space-y-4" style={homeStyle}>
+              <div className="flex items-center gap-3">
+                <TeamLogo logoKey={homeTeam.logoKey} shortName={homeTeam.shortName} />
+                <div>
+                  <p className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
+                    Local
+                  </p>
+                  <p className="text-foreground text-base font-bold">{homeTeam.name}</p>
+                </div>
+              </div>
+              <div className="grid grid-cols-3 gap-3">
+                <div className="space-y-1">
+                  <label className="text-muted-foreground text-xs font-semibold">Carreras <span className="text-primary/60">({computedHomeRuns})</span></label>
+                  <Input
+                    type="number"
+                    min={0}
+                    value={homeScore}
+                    onChange={(e) => {
+                      const val = parseInt(e.target.value, 10);
+                      onScoreChange("home_score", isNaN(val) || val < 0 ? 0 : val);
+                    }}
+                    className="h-10 text-center text-lg font-bold"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-muted-foreground text-xs font-semibold">Hits <span className="text-primary/60">({computedHomeHits})</span></label>
+                  <Input
+                    type="number"
+                    min={0}
+                    value={homeHits}
+                    onChange={(e) => {
+                      const val = parseInt(e.target.value, 10);
+                      onScoreChange("home_hits", isNaN(val) || val < 0 ? 0 : val);
+                    }}
+                    className="h-10 text-center text-lg font-bold"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-muted-foreground text-xs font-semibold">Errores</label>
+                  <Input
+                    type="number"
+                    min={0}
+                    value={homeErrors}
+                    onChange={(e) => {
+                      const val = parseInt(e.target.value, 10);
+                      onScoreChange("home_errors", isNaN(val) || val < 0 ? 0 : val);
+                    }}
+                    className="h-10 text-center text-lg font-bold"
+                  />
+                </div>
               </div>
             </div>
-            <div className="grid grid-cols-3 gap-3">
-              <div className="space-y-1">
-                <label className="text-xs font-semibold text-muted-foreground">Carreras</label>
-                <Input
-                  type="number"
-                  min={0}
-                  value={homeScore}
-                  onChange={(e) => {
-                    const val = parseInt(e.target.value, 10);
-                    setHomeScore(isNaN(val) || val < 0 ? 0 : val);
-                  }}
-                  className="h-10 text-center text-lg font-bold"
-                />
-              </div>
-              <div className="space-y-1">
-                <label className="text-xs font-semibold text-muted-foreground">Hits</label>
-                <Input
-                  type="number"
-                  min={0}
-                  value={homeHits}
-                  onChange={(e) => {
-                    const val = parseInt(e.target.value, 10);
-                    setHomeHits(isNaN(val) || val < 0 ? 0 : val);
-                  }}
-                  className="h-10 text-center text-lg font-bold"
-                />
-              </div>
-              <div className="space-y-1">
-                <label className="text-xs font-semibold text-muted-foreground">Errores</label>
-                <Input
-                  type="number"
-                  min={0}
-                  value={homeErrors}
-                  onChange={(e) => {
-                    const val = parseInt(e.target.value, 10);
-                    setHomeErrors(isNaN(val) || val < 0 ? 0 : val);
-                  }}
-                  className="h-10 text-center text-lg font-bold"
-                />
-              </div>
-            </div>
-          </div>
 
-          <div className="space-y-4" style={awayStyle}>
-            <div className="flex items-center gap-3">
-              <TeamLogo logoKey={awayTeam.logoKey} shortName={awayTeam.shortName} />
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Visitante</p>
-                <p className="text-base font-bold text-foreground">{awayTeam.name}</p>
+            <div className="space-y-4" style={awayStyle}>
+              <div className="flex items-center gap-3">
+                <TeamLogo logoKey={awayTeam.logoKey} shortName={awayTeam.shortName} />
+                <div>
+                  <p className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
+                    Visitante
+                  </p>
+                  <p className="text-foreground text-base font-bold">{awayTeam.name}</p>
+                </div>
+              </div>
+              <div className="grid grid-cols-3 gap-3">
+                <div className="space-y-1">
+                  <label className="text-muted-foreground text-xs font-semibold">Carreras <span className="text-primary/60">({computedAwayRuns})</span></label>
+                  <Input
+                    type="number"
+                    min={0}
+                    value={awayScore}
+                    onChange={(e) => {
+                      const val = parseInt(e.target.value, 10);
+                      onScoreChange("away_score", isNaN(val) || val < 0 ? 0 : val);
+                    }}
+                    className="h-10 text-center text-lg font-bold"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-muted-foreground text-xs font-semibold">Hits <span className="text-primary/60">({computedAwayHits})</span></label>
+                  <Input
+                    type="number"
+                    min={0}
+                    value={awayHits}
+                    onChange={(e) => {
+                      const val = parseInt(e.target.value, 10);
+                      onScoreChange("away_hits", isNaN(val) || val < 0 ? 0 : val);
+                    }}
+                    className="h-10 text-center text-lg font-bold"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-muted-foreground text-xs font-semibold">Errores</label>
+                  <Input
+                    type="number"
+                    min={0}
+                    value={awayErrors}
+                    onChange={(e) => {
+                      const val = parseInt(e.target.value, 10);
+                      onScoreChange("away_errors", isNaN(val) || val < 0 ? 0 : val);
+                    }}
+                    className="h-10 text-center text-lg font-bold"
+                  />
+                </div>
               </div>
             </div>
-            <div className="grid grid-cols-3 gap-3">
-              <div className="space-y-1">
-                <label className="text-xs font-semibold text-muted-foreground">Carreras</label>
-                <Input
-                  type="number"
-                  min={0}
-                  value={awayScore}
-                  onChange={(e) => {
-                    const val = parseInt(e.target.value, 10);
-                    setAwayScore(isNaN(val) || val < 0 ? 0 : val);
-                  }}
-                  className="h-10 text-center text-lg font-bold"
-                />
-              </div>
-              <div className="space-y-1">
-                <label className="text-xs font-semibold text-muted-foreground">Hits</label>
-                <Input
-                  type="number"
-                  min={0}
-                  value={awayHits}
-                  onChange={(e) => {
-                    const val = parseInt(e.target.value, 10);
-                    setAwayHits(isNaN(val) || val < 0 ? 0 : val);
-                  }}
-                  className="h-10 text-center text-lg font-bold"
-                />
-              </div>
-              <div className="space-y-1">
-                <label className="text-xs font-semibold text-muted-foreground">Errores</label>
-                <Input
-                  type="number"
-                  min={0}
-                  value={awayErrors}
-                  onChange={(e) => {
-                    const val = parseInt(e.target.value, 10);
-                    setAwayErrors(isNaN(val) || val < 0 ? 0 : val);
-                  }}
-                  className="h-10 text-center text-lg font-bold"
-                />
-              </div>
-            </div>
-          </div>
         </div>
       </CardContent>
     </Card>
+  );
+}
+
+function normalize(str: string) {
+  return str
+    .normalize("NFD")
+    .replace(/\p{Diacritic}/gu, "")
+    .toLowerCase();
+}
+
+function filterRosterByName(roster: RosterPlayer[], query: string): RosterPlayer[] {
+  if (!query.trim()) return roster;
+  const q = normalize(query);
+  return roster.filter(
+    (rp) =>
+      normalize(rp.player.first_name).includes(q) ||
+      normalize(rp.player.last_name).includes(q) ||
+      (rp.player.nickname && normalize(rp.player.nickname).includes(q)),
   );
 }
 
@@ -554,11 +570,82 @@ function GameStatsEntryPage() {
       .sort((a, b) => (a.roster.jersey_number ?? 99) - (b.roster.jersey_number ?? 99));
   }, [awayRoster, playerMap]);
 
-  // Inicializar estado de stats desde la BD
-  const [playerStats, setPlayerStats] = useState<Record<string, PlayerStats>>({});
+  const [searchQuery, setSearchQuery] = useState("");
+
+  const filteredHomePlayers = useMemo(
+    () => filterRosterByName(homePlayers, searchQuery),
+    [homePlayers, searchQuery],
+  );
+
+  const filteredAwayPlayers = useMemo(
+    () => filterRosterByName(awayPlayers, searchQuery),
+    [awayPlayers, searchQuery],
+  );
+
+  const [scoreState, setScoreState] = useState({
+    home_score: 0,
+    away_score: 0,
+    home_hits: 0,
+    away_hits: 0,
+    home_errors: 0,
+    away_errors: 0,
+  });
 
   useEffect(() => {
     if (!game) return;
+    setScoreState({
+      home_score: game.home_score ?? 0,
+      away_score: game.away_score ?? 0,
+      home_hits: game.home_hits ?? 0,
+      away_hits: game.away_hits ?? 0,
+      home_errors: game.home_errors ?? 0,
+      away_errors: game.away_errors ?? 0,
+    });
+  }, [game]);
+
+  const handleScoreChange = (field: string, value: number) => {
+    setScoreState((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const updateGame = useUpdateGame();
+
+  const handleSaveScore = async () => {
+    if (!game) return;
+    try {
+      const data: GameUpdate = {
+        home_score: scoreState.home_score,
+        away_score: scoreState.away_score,
+        home_hits: scoreState.home_hits,
+        away_hits: scoreState.away_hits,
+        home_errors: scoreState.home_errors,
+        away_errors: scoreState.away_errors,
+      };
+
+      if (game.status === "scheduled" || game.status === "in_progress") {
+        data.status = "statistics_entry";
+      }
+
+      await updateGame.mutateAsync({ id: gameId, data });
+      toast({ title: "Marcador guardado", variant: "success" });
+    } catch (err) {
+      toast({
+        title: "Error",
+        description: getUserFriendlyMessage(handleError(err)),
+        variant: "destructive",
+      });
+    }
+  };
+
+  // Inicializar estado de stats desde la BD
+  const [playerStats, setPlayerStats] = useState<Record<string, PlayerStats>>({});
+  const prevPlayerIds = useRef<string[]>([]);
+  const initialized = useRef(false);
+
+  useEffect(() => {
+    if (!game) return;
+
+    const currentPlayerIds = [...homePlayers, ...awayPlayers].map((rp) => rp.player.id).sort();
+    if (initialized.current && arraysEqual(currentPlayerIds, prevPlayerIds.current)) return;
 
     const stats: Record<string, PlayerStats> = {};
 
@@ -566,14 +653,32 @@ function GameStatsEntryPage() {
     [...homePlayers, ...awayPlayers].forEach((rp) => {
       stats[rp.player.id] = {
         batting: {
-          at_bats: 0, runs: 0, hits: 0, doubles: 0, triples: 0,
-          home_runs: 0, rbi: 0, walks: 0, strikeouts: 0,
-          stolen_bases: 0, caught_stealing: 0, hit_by_pitch: 0, sacrifice_flies: 0,
+          at_bats: 0,
+          runs: 0,
+          hits: 0,
+          doubles: 0,
+          triples: 0,
+          home_runs: 0,
+          rbi: 0,
+          walks: 0,
+          strikeouts: 0,
+          stolen_bases: 0,
+          caught_stealing: 0,
+          hit_by_pitch: 0,
+          sacrifice_flies: 0,
         },
         pitching: {
-          innings_pitched: 0, hits_allowed: 0, runs_allowed: 0, earned_runs: 0,
-          walks: 0, strikeouts: 0, home_runs_allowed: 0, wild_pitches: 0,
-          wins: 0, losses: 0, saves: 0,
+          innings_pitched: 0,
+          hits_allowed: 0,
+          runs_allowed: 0,
+          earned_runs: 0,
+          walks: 0,
+          strikeouts: 0,
+          home_runs_allowed: 0,
+          wild_pitches: 0,
+          wins: 0,
+          losses: 0,
+          saves: 0,
         },
         showPitching: false,
       };
@@ -620,15 +725,34 @@ function GameStatsEntryPage() {
       }
     });
 
+    initialized.current = true;
+    prevPlayerIds.current = currentPlayerIds;
     setPlayerStats(stats);
   }, [game, homePlayers, awayPlayers, battingStats, pitchingStats]);
+
+  function arraysEqual(a: string[], b: string[]) {
+    if (a.length !== b.length) return false;
+    for (let i = 0; i < a.length; i++) if (a[i] !== b[i]) return false;
+    return true;
+  }
+
+  const computedTotals = useMemo(() => {
+    const homeRuns = homePlayers.reduce((acc, rp) => acc + (playerStats[rp.player.id]?.batting.runs ?? 0), 0);
+    const homeHits = homePlayers.reduce((acc, rp) => acc + (playerStats[rp.player.id]?.batting.hits ?? 0), 0);
+    const awayRuns = awayPlayers.reduce((acc, rp) => acc + (playerStats[rp.player.id]?.batting.runs ?? 0), 0);
+    const awayHits = awayPlayers.reduce((acc, rp) => acc + (playerStats[rp.player.id]?.batting.hits ?? 0), 0);
+    return { homeRuns, homeHits, awayRuns, awayHits };
+  }, [playerStats, homePlayers, awayPlayers]);
 
   const handlePlayerStatsChange = (playerId: string, stats: PlayerStats) => {
     setPlayerStats((prev) => ({ ...prev, [playerId]: stats }));
   };
 
-  const isSaving = createBatting.isPending || updateBatting.isPending || 
-                   createPitching.isPending || updatePitching.isPending;
+  const isSaving =
+    createBatting.isPending ||
+    updateBatting.isPending ||
+    createPitching.isPending ||
+    updatePitching.isPending;
 
   const handleSaveAllStats = async () => {
     if (!game) return;
@@ -641,11 +765,12 @@ function GameStatsEntryPage() {
         const stats = playerStats[rp.player.id];
         if (!stats) return;
 
-        const teamId = homePlayers.includes(rp) ? game.home_team_id : game.away_team_id;
+        const isHome = homePlayers.includes(rp);
+        const teamId = isHome ? game.home_team_id : game.away_team_id;
 
         // Buscar si ya existe batting stats para este jugador
         const existingBatting = battingStats.find((s) => s.player_id === rp.player.id);
-        
+
         if (existingBatting) {
           // Actualizar
           promises.push(
@@ -670,7 +795,7 @@ function GameStatsEntryPage() {
                 hit_by_pitch: stats.batting.hit_by_pitch,
                 sacrifice_flies: stats.batting.sacrifice_flies,
               },
-            })
+            }),
           );
         } else {
           // Crear
@@ -699,7 +824,7 @@ function GameStatsEntryPage() {
         // Procesar pitching stats solo si showPitching está activo
         if (stats.showPitching) {
           const existingPitching = pitchingStats.find((s) => s.player_id === rp.player.id);
-          
+
           if (existingPitching) {
             promises.push(
               updatePitching.mutateAsync({
@@ -721,7 +846,7 @@ function GameStatsEntryPage() {
                   losses: stats.pitching.losses,
                   saves: stats.pitching.saves,
                 },
-              })
+              }),
             );
           } else {
             const pitchingData: PitchingStatsInsert = {
@@ -747,6 +872,7 @@ function GameStatsEntryPage() {
       });
 
       await Promise.all(promises);
+
       toast({ title: "Estadísticas guardadas", variant: "success" });
     } catch (err) {
       toast({
@@ -768,9 +894,9 @@ function GameStatsEntryPage() {
             Volver al calendario
           </Link>
         </Button>
-        <div className="rounded-xl border-2 border-dashed border-primary/20 bg-gradient-to-br from-muted/30 to-background p-12 text-center">
-          <p className="text-lg font-bold text-foreground">Partido no encontrado</p>
-          <p className="mt-1 text-sm text-muted-foreground">
+        <div className="border-primary/20 from-muted/30 to-background rounded-xl border-2 border-dashed bg-gradient-to-br p-12 text-center">
+          <p className="text-foreground text-lg font-bold">Partido no encontrado</p>
+          <p className="text-muted-foreground mt-1 text-sm">
             El partido que buscas no existe o fue eliminado
           </p>
         </div>
@@ -780,7 +906,7 @@ function GameStatsEntryPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="sticky top-0 z-50 bg-background border-b border-border shadow-sm">
+      <div className="bg-background border-border sticky top-0 z-50 border-b shadow-sm">
         <PageHeader
           icon={ClipboardCheck}
           title="Captura de Estadísticas"
@@ -793,31 +919,25 @@ function GameStatsEntryPage() {
                   Calendario
                 </Link>
               </Button>
-              <Button 
-                onClick={handleSaveAllStats} 
-                disabled={isSaving}
-                size="sm"
-              >
-              {isSaving ? (
-                <>
-                  <span className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
-                  Guardando...
-                </>
-              ) : (
-                <>
-                  <Save className="h-4 w-4" />
-                  Guardar todo
-                </>
-              )}
-            </Button>
-          </div>
-        }
-      />
+              <Button onClick={handleSaveAllStats} disabled={isSaving} size="sm">
+                {isSaving ? (
+                  <>
+                    <span className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                    Guardando...
+                  </>
+                ) : (
+                  <>
+                    <Save className="h-4 w-4" />
+                    Guardar todo
+                  </>
+                )}
+              </Button>
+            </div>
+          }
+        />
       </div>
 
       <GameScoreboard
-        gameId={gameId}
-        gameStatus={game.status}
         homeTeam={{
           name: homeTeam?.name ?? "Equipo Local",
           shortName: homeTeam?.short_name ?? "?",
@@ -829,41 +949,74 @@ function GameStatsEntryPage() {
           name: awayTeam?.name ?? "Equipo Visitante",
           shortName: awayTeam?.short_name ?? "?",
           logoKey: awayTeam?.logo_key ?? null,
-          primaryColor: awayTeam?.primary_color ?? null,
-          secondaryColor: awayTeam?.secondary_color ?? null,
+          primaryColor: homeTeam?.primary_color ?? null,
+          secondaryColor: homeTeam?.secondary_color ?? null,
         }}
-        initialScore={{
-          home_score: game.home_score,
-          away_score: game.away_score,
-          home_hits: game.home_hits,
-          away_hits: game.away_hits,
-          home_errors: game.home_errors,
-          away_errors: game.away_errors,
-        }}
+        homeScore={scoreState.home_score}
+        awayScore={scoreState.away_score}
+        homeHits={scoreState.home_hits}
+        awayHits={scoreState.away_hits}
+        homeErrors={scoreState.home_errors}
+        awayErrors={scoreState.away_errors}
+        onScoreChange={handleScoreChange}
+        onSave={handleSaveScore}
+        isSaving={updateGame.isPending}
+        computedHomeRuns={computedTotals.homeRuns}
+        computedHomeHits={computedTotals.homeHits}
+        computedAwayRuns={computedTotals.awayRuns}
+        computedAwayHits={computedTotals.awayHits}
       />
 
-      <Accordion type="multiple" defaultValue={[homeTeam?.id ?? "home", awayTeam?.id ?? "away"]} className="space-y-3">
-        <TeamSection
-          teamName={homeTeam?.name ?? "Equipo Local"}
-          teamShortName={homeTeam?.short_name ?? "?"}
-          teamLogoKey={homeTeam?.logo_key ?? null}
-          rosterPlayers={homePlayers}
-          positions={positionMap}
-          accordionValue={homeTeam?.id ?? "home"}
-          playerStats={playerStats}
-          onPlayerStatsChange={handlePlayerStatsChange}
-        />
-        <TeamSection
-          teamName={awayTeam?.name ?? "Equipo Visitante"}
-          teamShortName={awayTeam?.short_name ?? "?"}
-          teamLogoKey={awayTeam?.logo_key ?? null}
-          rosterPlayers={awayPlayers}
-          positions={positionMap}
-          accordionValue={awayTeam?.id ?? "away"}
-          playerStats={playerStats}
-          onPlayerStatsChange={handlePlayerStatsChange}
-        />
-      </Accordion>
+      <Tabs defaultValue="home" className="w-full" onValueChange={() => setSearchQuery("")}>
+        <div className="mb-2 flex flex-col gap-3 sm:flex-row sm:items-center">
+          <TabsList className="w-full sm:w-auto">
+            <TabsTrigger value="home" className="flex items-center gap-2">
+              <TeamLogo
+                logoKey={homeTeam?.logo_key ?? null}
+                shortName={homeTeam?.short_name ?? "?"}
+              />
+              <span className="hidden sm:inline">{homeTeam?.name ?? "Equipo Local"}</span>
+              <span className="sm:hidden">{homeTeam?.short_name ?? "Local"}</span>
+              <span className="text-muted-foreground ml-1 text-xs">({homePlayers.length})</span>
+            </TabsTrigger>
+            <TabsTrigger value="away" className="flex items-center gap-2">
+              <TeamLogo
+                logoKey={awayTeam?.logo_key ?? null}
+                shortName={awayTeam?.short_name ?? "?"}
+              />
+              <span className="hidden sm:inline">{awayTeam?.name ?? "Equipo Visitante"}</span>
+              <span className="sm:hidden">{awayTeam?.short_name ?? "Visita"}</span>
+              <span className="text-muted-foreground ml-1 text-xs">({awayPlayers.length})</span>
+            </TabsTrigger>
+          </TabsList>
+          <div className="relative max-w-xs flex-1">
+            <Search className="text-muted-foreground absolute top-1/2 left-2.5 h-4 w-4 -translate-y-1/2" />
+            <Input
+              type="text"
+              placeholder="Buscar jugador..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="h-10 pl-8"
+            />
+          </div>
+        </div>
+        <TabsContent value="home">
+          <TeamSection
+            rosterPlayers={filteredHomePlayers}
+            positions={positionMap}
+            playerStats={playerStats}
+            onPlayerStatsChange={handlePlayerStatsChange}
+          />
+        </TabsContent>
+        <TabsContent value="away">
+          <TeamSection
+            rosterPlayers={filteredAwayPlayers}
+            positions={positionMap}
+            playerStats={playerStats}
+            onPlayerStatsChange={handlePlayerStatsChange}
+          />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
