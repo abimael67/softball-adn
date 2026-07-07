@@ -43,6 +43,7 @@ export const QUERY_KEYS = {
   teamSeasonBatting: (teamId: string, seasonId: string) => ["batting-stats", "team", teamId, seasonId] as const,
   teamGameBatting: (teamId: string, seasonId: string) => ["batting-stats", "team-games", teamId, seasonId] as const,
   teamSeasonFielding: (teamId: string, seasonId: string) => ["fielding-stats", "team", teamId, seasonId] as const,
+  playerGameBatting: (playerId: string, seasonId: string) => ["batting-stats", "player-games", playerId, seasonId] as const,
   playerSeasonBatting: (playerId: string, seasonId: string) => ["batting-stats", playerId, seasonId] as const,
   playerSeasonPitching: (playerId: string, seasonId: string) => ["pitching-stats", playerId, seasonId] as const,
   playerSeasonFielding: (playerId: string, seasonId: string) => ["fielding-stats", playerId, seasonId] as const,

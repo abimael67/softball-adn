@@ -6,8 +6,9 @@ import { SupabaseBattingStatsRepository } from "@/services/repositories/supabase
 import { SupabasePitchingStatsRepository } from "@/services/repositories/supabase-pitching-stats-repository";
 import { SupabaseFieldingStatsRepository } from "@/services/repositories/supabase-fielding-stats-repository";
 import { SupabaseSeasonRosterRepository } from "@/services/repositories/supabase-season-roster-repository";
+import { SupabaseTeamRepository } from "@/services/repositories/supabase-team-repository";
 import { QUERY_KEYS } from "@/lib/constants";
-import type { BattingStats, PitchingStats, FieldingStats, Game } from "@/types/database";
+import type { BattingStats, PitchingStats, FieldingStats, Game, Team } from "@/types/database";
 
 const seasonRepo = new SupabaseSeasonRepository();
 const playerRepo = new SupabasePlayerRepository();
@@ -16,6 +17,7 @@ const battingRepo = new SupabaseBattingStatsRepository();
 const pitchingRepo = new SupabasePitchingStatsRepository();
 const fieldingRepo = new SupabaseFieldingStatsRepository();
 const rosterRepo = new SupabaseSeasonRosterRepository();
+const teamRepo = new SupabaseTeamRepository();
 
 export function useLatestSeason() {
   return useQuery({
@@ -302,6 +304,45 @@ export function useTeamGameBatting(teamId: string, seasonId: string) {
         }));
     },
     enabled: !!teamId && !!seasonId,
+  });
+}
+
+export interface PlayerGameBatting {
+  game: Game;
+  opponent: Team | undefined;
+  stats: BattingStats;
+}
+
+export function usePlayerGameBatting(playerId: string, seasonId: string) {
+  return useQuery({
+    queryKey: QUERY_KEYS.playerGameBatting(playerId, seasonId),
+    queryFn: async (): Promise<PlayerGameBatting[]> => {
+      const [stats, games, teams] = await Promise.all([
+        battingRepo.findByPlayerAndSeason(playerId, seasonId),
+        gameRepo.findBySeasonId(seasonId),
+        teamRepo.findBySeasonId(seasonId),
+      ]);
+
+      const gameMap = new Map(games.map((g) => [g.id, g]));
+      const teamMap = new Map(teams.map((t) => [t.id, t]));
+
+      return stats
+        .filter((s) => gameMap.has(s.game_id))
+        .map((s) => {
+          const game = gameMap.get(s.game_id)!;
+          const opponentId =
+            game.home_team_id === s.team_id
+              ? game.away_team_id
+              : game.home_team_id;
+          return { game, opponent: teamMap.get(opponentId), stats: s };
+        })
+        .sort(
+          (a, b) =>
+            new Date(b.game.scheduled_at).getTime() -
+            new Date(a.game.scheduled_at).getTime()
+        );
+    },
+    enabled: !!playerId && !!seasonId,
   });
 }
 
