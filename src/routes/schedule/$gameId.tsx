@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowLeft, MapPin, BarChart3, FileText } from "lucide-react";
+import { VenueDetailsDialog } from "@/components/public/venue-details-dialog";
 import { 
   useGame, 
   useTeams, 
@@ -198,8 +199,14 @@ function GameDetailsPage() {
             <div className="flex flex-1 flex-col p-4">
               {/* Sede */}
               <div className="mb-3 flex items-center justify-center gap-1.5 text-xs text-foreground/70">
-                <MapPin className="h-3.5 w-3.5" />
-                <span className="font-semibold">{venue?.name || "Por definir"}</span>
+                {venue ? (
+                  <VenueDetailsDialog venue={venue} venueName={venue.name} />
+                ) : (
+                  <>
+                    <MapPin className="h-3.5 w-3.5" />
+                    <span className="font-semibold">Por definir</span>
+                  </>
+                )}
               </div>
 
               <div className="flex flex-1 items-center justify-between gap-2 py-2">

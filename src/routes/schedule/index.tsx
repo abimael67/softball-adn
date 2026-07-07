@@ -6,6 +6,7 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { storageService } from "@/services/storage-service";
+import { VenueDetailsDialog } from "@/components/public/venue-details-dialog";
 import type { Game } from "@/types/database";
 
 export const Route = createFileRoute("/schedule/")({
@@ -121,12 +122,13 @@ function SchedulePage() {
       groups[key] = {
         date,
         venue: venueName,
+        venueId: game.venue_id,
         games: [],
       };
     }
     groups[key].games.push(game);
     return groups;
-  }, {} as Record<string, { date: string; venue: string; games: Game[] }>);
+  }, {} as Record<string, { date: string; venue: string; venueId: string | null; games: Game[] }>);
 
   const gameGroups = Object.values(groupedGames).sort((a, b) => {
     const dateA = new Date(a.games[0].scheduled_at).getTime();
@@ -188,10 +190,19 @@ function SchedulePage() {
                   </h2>
                 </div>
                 <div className="flex items-center gap-2">
-                  <MapPin className="h-4 w-4 text-primary/60" />
-                  <span className="text-sm font-medium text-foreground/70">
-                    {group.venue}
-                  </span>
+                  {group.venueId ? (
+                    <VenueDetailsDialog
+                      venue={venues?.find((v) => v.id === group.venueId) || null}
+                      venueName={group.venue}
+                    />
+                  ) : (
+                    <>
+                      <MapPin className="h-4 w-4 text-primary/60" />
+                      <span className="text-sm font-medium text-foreground/70">
+                        {group.venue}
+                      </span>
+                    </>
+                  )}
                 </div>
               </div>
               <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
