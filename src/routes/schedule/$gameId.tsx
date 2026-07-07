@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowLeft, MapPin, BarChart3 } from "lucide-react";
+import { ArrowLeft, MapPin, BarChart3, FileText } from "lucide-react";
 import { 
   useGame, 
   useTeams, 
@@ -9,12 +9,14 @@ import {
   useBattingStatsByGame,
   usePitchingStatsByGame,
   useGames,
+  useGameScoreSheets,
 } from "@/hooks";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { ImageViewer } from "@/components/ui/image-viewer";
 import { storageService } from "@/services/storage-service";
 import type { Team } from "@/types/database";
 
@@ -31,7 +33,9 @@ function GameDetailsPage() {
   const { data: battingStats = [] } = useBattingStatsByGame(gameId);
   const { data: pitchingStats = [] } = usePitchingStatsByGame(gameId);
   const { data: allGames = [] } = useGames(game?.season_id || "");
+  const { data: scoreSheets = [] } = useGameScoreSheets(gameId);
   const [activeTab, setActiveTab] = useState<string>("home");
+  const [viewerImage, setViewerImage] = useState<string | null>(null);
 
   const getTeam = (teamId: string) => {
     return teams?.find((t) => t.id === teamId);
@@ -45,6 +49,10 @@ function GameDetailsPage() {
   const hasScore = () => {
     if (!game) return false;
     return game.home_score !== null && game.away_score !== null;
+  };
+
+  const getScoreSheetForTeam = (teamType: "home" | "away") => {
+    return scoreSheets.find((s) => s.image_key.includes(`/${teamType}`));
   };
 
   const getWinner = () => {
@@ -311,6 +319,24 @@ function GameDetailsPage() {
 
             <TabsContent value="home" className="p-4">
               {(() => {
+                const sheet = getScoreSheetForTeam("home");
+                return sheet ? (
+                  <div className="mb-4 flex items-center gap-3 rounded-lg border bg-muted/30 p-3">
+                    <button onClick={() => setViewerImage(storageService.getPublicUrl(sheet.image_key))}>
+                      <img
+                        src={storageService.getPublicUrl(sheet.image_key)}
+                        alt="Hoja del local"
+                        className="h-16 w-12 cursor-pointer rounded object-cover ring-1 ring-primary/20 transition-opacity hover:opacity-80"
+                      />
+                    </button>
+                    <div className="flex items-center gap-2">
+                      <FileText className="h-4 w-4 text-primary" />
+                      <p className="text-sm font-medium text-foreground">Hoja de anotación</p>
+                    </div>
+                  </div>
+                ) : null;
+              })()}
+              {(() => {
                 const stats = getTeamStats(game.home_team_id);
                 if (stats.batting.length === 0 && stats.pitching.length === 0) {
                   return <p className="text-center text-muted-foreground py-8">Sin estadísticas disponibles</p>;
@@ -486,6 +512,24 @@ function GameDetailsPage() {
             </TabsContent>
 
             <TabsContent value="away" className="p-4">
+              {(() => {
+                const sheet = getScoreSheetForTeam("away");
+                return sheet ? (
+                  <div className="mb-4 flex items-center gap-3 rounded-lg border bg-muted/30 p-3">
+                    <button onClick={() => setViewerImage(storageService.getPublicUrl(sheet.image_key))}>
+                      <img
+                        src={storageService.getPublicUrl(sheet.image_key)}
+                        alt="Hoja del visitante"
+                        className="h-16 w-12 cursor-pointer rounded object-cover ring-1 ring-primary/20 transition-opacity hover:opacity-80"
+                      />
+                    </button>
+                    <div className="flex items-center gap-2">
+                      <FileText className="h-4 w-4 text-primary" />
+                      <p className="text-sm font-medium text-foreground">Hoja de anotación</p>
+                    </div>
+                  </div>
+                ) : null;
+              })()}
               {(() => {
                 const stats = getTeamStats(game.away_team_id);
                 if (stats.batting.length === 0 && stats.pitching.length === 0) {
@@ -663,6 +707,13 @@ function GameDetailsPage() {
           </Tabs>
         </Card>
       </>)}
+
+      <ImageViewer
+        open={viewerImage !== null}
+        onOpenChange={(open) => { if (!open) setViewerImage(null); }}
+        imageUrl={viewerImage || ""}
+        alt="Hoja de anotación"
+      />
     </div>
   );
 }

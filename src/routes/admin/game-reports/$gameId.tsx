@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect, useRef } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowLeft, ClipboardCheck, Target, Activity, Save, Search } from "lucide-react";
+import { ArrowLeft, ClipboardCheck, Target, Activity, Save, Search, Upload, Trash2 } from "lucide-react";
 import {
   useGame,
   useRostersByTeam,
@@ -14,6 +14,9 @@ import {
   useUpdateBattingStats,
   useCreatePitchingStats,
   useUpdatePitchingStats,
+  useGameScoreSheets,
+  useCreateGameScoreSheet,
+  useDeleteGameScoreSheet,
 } from "@/hooks";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -29,6 +32,7 @@ import {
 } from "@/components/ui/accordion";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { PageHeader, LoadingState } from "@/components/admin/admin-shared";
+import { ImageViewer } from "@/components/ui/image-viewer";
 import { storageService } from "@/services/storage-service";
 import { handleError, getUserFriendlyMessage } from "@/lib/errors";
 import { toast } from "@/components/ui/toast";
@@ -531,11 +535,14 @@ function GameStatsEntryPage() {
 
   const { data: battingStats = [] } = useBattingStatsByGame(gameId);
   const { data: pitchingStats = [] } = usePitchingStatsByGame(gameId);
+  const { data: scoreSheets = [] } = useGameScoreSheets(gameId);
 
   const createBatting = useCreateBattingStats();
   const updateBatting = useUpdateBattingStats();
   const createPitching = useCreatePitchingStats();
   const updatePitching = useUpdatePitchingStats();
+  const createScoreSheet = useCreateGameScoreSheet();
+  const deleteScoreSheet = useDeleteGameScoreSheet();
 
   const playerMap = useMemo(() => {
     const map = new Map<string, Player>();
@@ -570,7 +577,9 @@ function GameStatsEntryPage() {
       .sort((a, b) => (a.roster.jersey_number ?? 99) - (b.roster.jersey_number ?? 99));
   }, [awayRoster, playerMap]);
 
+  const [activeTab, setActiveTab] = useState<"home" | "away">("home");
   const [searchQuery, setSearchQuery] = useState("");
+  const [viewerImage, setViewerImage] = useState<string | null>(null);
 
   const filteredHomePlayers = useMemo(
     () => filterRosterByName(homePlayers, searchQuery),
@@ -608,6 +617,47 @@ function GameStatsEntryPage() {
   };
 
   const updateGame = useUpdateGame();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [uploadingTeam, setUploadingTeam] = useState<"home" | "away" | null>(null);
+
+  const getScoreSheetForTeam = (teamType: "home" | "away") => {
+    return scoreSheets.find((s) => s.image_key.includes(`/${teamType}`));
+  };
+
+  const handleUploadScoreSheet = async (file: File, teamType: "home" | "away") => {
+    if (!game) return;
+    try {
+      setUploadingTeam(teamType);
+      const existing = getScoreSheetForTeam(teamType);
+      if (existing) {
+        await deleteScoreSheet.mutateAsync({ id: existing.id, gameId });
+      }
+      const imageKey = await storageService.upload(file, `game-score-sheets/${gameId}/${teamType}`);
+      await createScoreSheet.mutateAsync({ game_id: gameId, image_key: imageKey });
+      toast({ title: `Hoja del ${teamType === "home" ? "local" : "visitante"} adjuntada`, variant: "success" });
+    } catch (err) {
+      toast({
+        title: "Error",
+        description: getUserFriendlyMessage(handleError(err)),
+        variant: "destructive",
+      });
+    } finally {
+      setUploadingTeam(null);
+    }
+  };
+
+  const handleDeleteScoreSheet = async (id: string) => {
+    try {
+      await deleteScoreSheet.mutateAsync({ id, gameId });
+      toast({ title: "Hoja de anotación eliminada", variant: "success" });
+    } catch (err) {
+      toast({
+        title: "Error",
+        description: getUserFriendlyMessage(handleError(err)),
+        variant: "destructive",
+      });
+    }
+  };
 
   const handleSaveScore = async () => {
     if (!game) return;
@@ -910,7 +960,11 @@ function GameStatsEntryPage() {
         <PageHeader
           icon={ClipboardCheck}
           title="Captura de Estadísticas"
-          description={`${homeTeam?.name ?? "Local"} vs ${awayTeam?.name ?? "Visitante"}`}
+          description={
+            game
+              ? `${homeTeam?.name ?? "Local"} vs ${awayTeam?.name ?? "Visitante"} — ${new Date(game.scheduled_at).toLocaleDateString("es", { day: "2-digit", month: "long", year: "numeric" })} ${new Date(game.scheduled_at).toLocaleTimeString("es", { hour: "2-digit", minute: "2-digit" })}`
+              : `${homeTeam?.name ?? "Local"} vs ${awayTeam?.name ?? "Visitante"}`
+          }
           actions={
             <div className="flex gap-2">
               <Button asChild variant="outline" size="sm">
@@ -967,7 +1021,7 @@ function GameStatsEntryPage() {
         computedAwayHits={computedTotals.awayHits}
       />
 
-      <Tabs defaultValue="home" className="w-full" onValueChange={() => setSearchQuery("")}>
+      <Tabs defaultValue="home" className="w-full" onValueChange={(v) => { setSearchQuery(""); setActiveTab(v as "home" | "away"); }}>
         <div className="mb-2 flex flex-col gap-3 sm:flex-row sm:items-center">
           <TabsList className="w-full sm:w-auto">
             <TabsTrigger value="home" className="flex items-center gap-2">
@@ -999,8 +1053,61 @@ function GameStatsEntryPage() {
               className="h-10 pl-8"
             />
           </div>
+          <input
+            type="file"
+            ref={fileInputRef}
+            accept="image/jpeg,image/png,image/webp,image/heic"
+            className="hidden"
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              if (file && activeTab) handleUploadScoreSheet(file, activeTab);
+              e.target.value = "";
+            }}
+          />
+          <Button
+            onClick={() => fileInputRef.current?.click()}
+            disabled={uploadingTeam !== null}
+            size="sm"
+            variant="outline"
+            className="shrink-0"
+          >
+            {uploadingTeam === activeTab ? (
+              <span className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+            ) : (
+              <Upload className="h-4 w-4" />
+            )}
+            {getScoreSheetForTeam(activeTab) ? "Reemplazar hoja" : "Adjuntar hoja"}
+          </Button>
         </div>
         <TabsContent value="home">
+          {(() => {
+            const sheet = getScoreSheetForTeam("home");
+            return sheet ? (
+              <div className="mb-4 flex items-center gap-3 rounded-lg border bg-muted/30 p-3">
+                <button onClick={() => setViewerImage(storageService.getPublicUrl(sheet.image_key))}>
+                  <img
+                    src={storageService.getPublicUrl(sheet.image_key)}
+                    alt="Hoja del local"
+                    className="h-16 w-12 cursor-pointer rounded object-cover ring-1 ring-primary/20 transition-opacity hover:opacity-80"
+                  />
+                </button>
+                <div className="flex-1">
+                  <p className="text-sm font-medium text-foreground">Hoja de anotación - Local</p>
+                  <p className="text-xs text-muted-foreground">
+                    {new Date(sheet.uploaded_at).toLocaleDateString("es", { day: "2-digit", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit" })}
+                  </p>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8 text-destructive"
+                  onClick={() => handleDeleteScoreSheet(sheet.id)}
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </div>
+            ) : null;
+          })()}
           <TeamSection
             rosterPlayers={filteredHomePlayers}
             positions={positionMap}
@@ -1009,6 +1116,34 @@ function GameStatsEntryPage() {
           />
         </TabsContent>
         <TabsContent value="away">
+          {(() => {
+            const sheet = getScoreSheetForTeam("away");
+            return sheet ? (
+              <div className="mb-4 flex items-center gap-3 rounded-lg border bg-muted/30 p-3">
+                <button onClick={() => setViewerImage(storageService.getPublicUrl(sheet.image_key))}>
+                  <img
+                    src={storageService.getPublicUrl(sheet.image_key)}
+                    alt="Hoja del visitante"
+                    className="h-16 w-12 cursor-pointer rounded object-cover ring-1 ring-primary/20 transition-opacity hover:opacity-80"
+                  />
+                </button>
+                <div className="flex-1">
+                  <p className="text-sm font-medium text-foreground">Hoja de anotación - Visitante</p>
+                  <p className="text-xs text-muted-foreground">
+                    {new Date(sheet.uploaded_at).toLocaleDateString("es", { day: "2-digit", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit" })}
+                  </p>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8 text-destructive"
+                  onClick={() => handleDeleteScoreSheet(sheet.id)}
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </div>
+            ) : null;
+          })()}
           <TeamSection
             rosterPlayers={filteredAwayPlayers}
             positions={positionMap}
@@ -1017,6 +1152,13 @@ function GameStatsEntryPage() {
           />
         </TabsContent>
       </Tabs>
+
+      <ImageViewer
+        open={viewerImage !== null}
+        onOpenChange={(open) => { if (!open) setViewerImage(null); }}
+        imageUrl={viewerImage || ""}
+        alt="Hoja de anotación"
+      />
     </div>
   );
 }

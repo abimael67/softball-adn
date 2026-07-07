@@ -5,6 +5,7 @@ export interface BattingStatsRepository {
   findByPlayerId(playerId: string): Promise<BattingStats[]>;
   findByPlayerAndSeason(playerId: string, seasonId: string): Promise<BattingStats[]>;
   findByPlayerAndGame(playerId: string, gameId: string): Promise<BattingStats | null>;
+  findByTeamAndSeason(teamId: string, seasonId: string): Promise<BattingStats[]>;
   create(data: BattingStatsInsert): Promise<BattingStats>;
   update(id: string, data: BattingStatsUpdate): Promise<BattingStats>;
 }

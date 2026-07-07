@@ -9,7 +9,18 @@ import {
   type ColumnDef,
   type SortingState,
   type ColumnFiltersState,
+  type FilterFn,
 } from "@tanstack/react-table";
+
+function normalize(str: string) {
+  return str.normalize("NFD").replace(/\p{Diacritic}/gu, "").toLowerCase();
+}
+
+const accentInsensitiveFilter: FilterFn<unknown> = (row, columnId, filterValue) => {
+  const value = row.getValue(columnId);
+  if (typeof value !== "string") return false;
+  return normalize(value).includes(normalize(filterValue));
+};
 import {
   Table,
   TableBody,
@@ -62,6 +73,7 @@ export function DataTable<TData, TValue>({
     onSortingChange: setSorting,
     onColumnFiltersChange: setColumnFilters,
     onGlobalFilterChange: setGlobalFilter,
+    globalFilterFn: accentInsensitiveFilter,
     state: { sorting, columnFilters, globalFilter },
     initialState: { pagination: { pageSize } },
   });

@@ -35,6 +35,17 @@ export class SupabaseFieldingStatsRepository implements FieldingStatsRepository 
     return data;
   }
 
+  async findByTeamAndSeason(teamId: string, seasonId: string): Promise<FieldingStats[]> {
+    const { data, error } = await supabase
+      .from("fielding_stats")
+      .select("*")
+      .eq("team_id", teamId)
+      .eq("season_id", seasonId);
+
+    if (error) throw new DatabaseError("Failed to fetch fielding stats", error);
+    return data;
+  }
+
   async findByPlayerAndGame(playerId: string, gameId: string): Promise<FieldingStats | null> {
     const { data, error } = await supabase
       .from("fielding_stats")

@@ -5,6 +5,7 @@ export interface FieldingStatsRepository {
   findByPlayerId(playerId: string): Promise<FieldingStats[]>;
   findByPlayerAndSeason(playerId: string, seasonId: string): Promise<FieldingStats[]>;
   findByPlayerAndGame(playerId: string, gameId: string): Promise<FieldingStats | null>;
+  findByTeamAndSeason(teamId: string, seasonId: string): Promise<FieldingStats[]>;
   create(data: FieldingStatsInsert): Promise<FieldingStats>;
   update(id: string, data: FieldingStatsUpdate): Promise<FieldingStats>;
 }

@@ -1,8 +1,9 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useMemo } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { UserCircle, Plus, Pencil, Trash2, Upload, Download } from "lucide-react";
 import type { ColumnDef } from "@tanstack/react-table";
-import { usePlayers, useCreatePlayer, useUpdatePlayer, useDeletePlayer, useChurches, usePositions } from "@/hooks";
+import { usePlayers, useCreatePlayer, useUpdatePlayer, useDeletePlayer, useChurches, usePositions, useRostersBySeason, useTeams } from "@/hooks";
+import { useLatestSeason } from "@/hooks/use-public-data";
 import type { Player, PlayerInsert, PlayerUpdate, BattingHand, ThrowingHand } from "@/types/database";
 import { handleError, getUserFriendlyMessage } from "@/lib/errors";
 import { storageService } from "@/services/storage-service";
@@ -42,6 +43,9 @@ function AdminPlayersPage() {
   const { data: players, isLoading } = usePlayers();
   const { data: churches } = useChurches();
   const { data: positions } = usePositions();
+  const { data: latestSeason } = useLatestSeason();
+  const { data: seasonRosters } = useRostersBySeason(latestSeason?.id ?? "");
+  const { data: teams } = useTeams();
   const createPlayer = useCreatePlayer();
   const updatePlayer = useUpdatePlayer();
   const deletePlayer = useDeletePlayer();
@@ -213,6 +217,18 @@ function AdminPlayersPage() {
     }
   };
 
+  const playerTeamMap = useMemo(() => {
+    const map = new Map<string, string>();
+    if (!seasonRosters || !teams) return map;
+    for (const roster of seasonRosters) {
+      if (!roster.is_active) continue;
+      if (map.has(roster.player_id)) continue;
+      const team = teams.find((t) => t.id === roster.team_id);
+      if (team) map.set(roster.player_id, team.name);
+    }
+    return map;
+  }, [seasonRosters, teams]);
+
   const filteredPlayers = players?.filter((p) => {
     if (filterBats !== "all" && p.bats !== filterBats) return false;
     if (filterThrows !== "all" && p.throws !== filterThrows) return false;
@@ -246,9 +262,16 @@ function AdminPlayersPage() {
       ),
     },
     {
-      accessorKey: "birth_date",
-      header: "Nacimiento",
-      cell: ({ getValue }) => getValue<string>() ? new Date(getValue<string>() + "T00:00:00").toLocaleDateString("es-ES", { day: "2-digit", month: "2-digit", year: "numeric" }) : "-",
+      id: "team",
+      header: "Último equipo",
+      cell: ({ row }) => {
+        const teamName = playerTeamMap.get(row.original.id);
+        return teamName ? (
+          <span className="text-foreground">{teamName}</span>
+        ) : (
+          <span className="text-muted-foreground">-</span>
+        );
+      },
     },
     {
       accessorKey: "bats",

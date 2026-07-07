@@ -35,6 +35,17 @@ export class SupabaseBattingStatsRepository implements BattingStatsRepository {
     return data;
   }
 
+  async findByTeamAndSeason(teamId: string, seasonId: string): Promise<BattingStats[]> {
+    const { data, error } = await supabase
+      .from("batting_stats")
+      .select("*")
+      .eq("team_id", teamId)
+      .eq("season_id", seasonId);
+
+    if (error) throw new DatabaseError("Failed to fetch batting stats", error);
+    return data;
+  }
+
   async findByPlayerAndGame(playerId: string, gameId: string): Promise<BattingStats | null> {
     const { data, error } = await supabase
       .from("batting_stats")

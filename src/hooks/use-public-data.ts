@@ -7,7 +7,7 @@ import { SupabasePitchingStatsRepository } from "@/services/repositories/supabas
 import { SupabaseFieldingStatsRepository } from "@/services/repositories/supabase-fielding-stats-repository";
 import { SupabaseSeasonRosterRepository } from "@/services/repositories/supabase-season-roster-repository";
 import { QUERY_KEYS } from "@/lib/constants";
-import type { BattingStats, PitchingStats, FieldingStats } from "@/types/database";
+import type { BattingStats, PitchingStats, FieldingStats, Game } from "@/types/database";
 
 const seasonRepo = new SupabaseSeasonRepository();
 const playerRepo = new SupabasePlayerRepository();
@@ -37,7 +37,7 @@ export function useTeamSeasonRecord(teamId: string, seasonId: string) {
     queryFn: async () => {
       const games = await gameRepo.findByTeamId(teamId, seasonId);
       const completed = games.filter(
-        (g) => g.status === "completed" || g.status === "published" || g.status === "approved"
+        (g) => g.home_score !== null && g.away_score !== null
       );
 
       let wins = 0;
@@ -245,6 +245,64 @@ function aggregateFieldingStats(stats: FieldingStats[]): AggregatedFieldingStats
   const fieldingPercentage = totalChances > 0 ? (agg.putouts + agg.assists) / totalChances : null;
 
   return { ...agg, fieldingPercentage };
+}
+
+export function useTeamSeasonBattingStats(teamId: string, seasonId: string) {
+  return useQuery({
+    queryKey: QUERY_KEYS.teamSeasonBatting(teamId, seasonId),
+    queryFn: async () => {
+      const stats = await battingRepo.findByTeamAndSeason(teamId, seasonId);
+      return aggregateBattingStats(stats);
+    },
+    enabled: !!teamId && !!seasonId,
+  });
+}
+
+export interface GameBattingStats {
+  hits: number;
+  homeRuns: number;
+  runs: number;
+  errors: number;
+}
+
+export interface GameWithBatting {
+  game: Game;
+  batting: GameBattingStats;
+}
+
+export function useTeamGameBatting(teamId: string, seasonId: string) {
+  return useQuery({
+    queryKey: QUERY_KEYS.teamGameBatting(teamId, seasonId),
+    queryFn: async (): Promise<GameWithBatting[]> => {
+      const [games, battingStats, fieldingStats] = await Promise.all([
+        gameRepo.findByTeamId(teamId, seasonId),
+        battingRepo.findByTeamAndSeason(teamId, seasonId),
+        fieldingRepo.findByTeamAndSeason(teamId, seasonId),
+      ]);
+
+      const gameBatting = new Map<string, GameBattingStats>();
+      for (const stat of battingStats) {
+        const current = gameBatting.get(stat.game_id) || { hits: 0, homeRuns: 0, runs: 0, errors: 0 };
+        current.hits += stat.hits;
+        current.homeRuns += stat.home_runs;
+        current.runs += stat.runs;
+        gameBatting.set(stat.game_id, current);
+      }
+      for (const stat of fieldingStats) {
+        const current = gameBatting.get(stat.game_id) || { hits: 0, homeRuns: 0, runs: 0, errors: 0 };
+        current.errors += stat.errors;
+        gameBatting.set(stat.game_id, current);
+      }
+
+      return games
+        .filter((g) => g.home_score !== null && g.away_score !== null)
+        .map((game) => ({
+          game,
+          batting: gameBatting.get(game.id) || { hits: 0, homeRuns: 0, runs: 0, errors: 0 },
+        }));
+    },
+    enabled: !!teamId && !!seasonId,
+  });
 }
 
 export function usePlayerSeasonStats(playerId: string, seasonId: string) {
